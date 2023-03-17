@@ -7,17 +7,38 @@ pub struct Bitgraph {
     adj: FixedBitSet,
     n: usize,
     is_dir: bool,
+
+    /// Directed neighbors
+    dnei: Vec<FixedBitSet>,
+
+    /// Undirected neighbors
+    unei: Vec<FixedBitSet>,
+
+    /// Number of directed neighbors
+    n_dnei: Vec<usize>,
+
+    /// Number of undirected neighbors
+    n_unei: Vec<usize>,
 }
 impl Bitgraph {
     pub fn from_graph<Ty: EdgeType>(graph: &Graph<(), (), Ty>) -> Self {
         let n = graph.node_count();
         let is_dir = Ty::is_directed();
         let mut adj = FixedBitSet::with_capacity(n * n);
+        let mut dnei = vec![FixedBitSet::with_capacity(n); n];
+        let mut unei = vec![FixedBitSet::with_capacity(n); n];
+        let mut n_unei = vec![0; n];
+        let mut n_dnei = vec![0; n];
         for edge in graph.edge_indices() {
             let (src, dst) = graph.edge_endpoints(edge).unwrap();
             adj.insert(src.index() * n + dst.index());
+            dnei[src.index()].insert(dst.index());
+            unei[src.index()].insert(dst.index());
+            unei[dst.index()].insert(src.index());
+            n_unei[src.index()] += 2;
+            n_dnei[src.index()] += 1;
         }
-        Bitgraph { adj, n, is_dir }
+        Bitgraph { adj, n, is_dir, dnei, unei, n_unei, n_dnei }
     }
 
     pub fn is_connected(&self, u: usize, v: usize) -> bool {
@@ -34,6 +55,22 @@ impl Bitgraph {
 
     pub fn adjacency(&self) -> &FixedBitSet {
         &self.adj
+    }
+
+    pub fn dir_neighbors(&self, u: usize) -> &FixedBitSet {
+        &self.dnei[u]
+    }
+
+    pub fn undir_neighbors(&self, u: usize) -> &FixedBitSet {
+        &self.unei[u]
+    }
+
+    pub fn n_dir_neighbors(&self, u: usize) -> usize {
+        self.n_dnei[u]
+    }
+
+    pub fn n_undir_neighbors(&self, u: usize) -> usize {
+        self.n_unei[u]
     }
 
     pub fn overwrite_adjacency(&mut self, adj: FixedBitSet) {

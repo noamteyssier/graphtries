@@ -134,6 +134,10 @@ impl GtrieNode {
         self.depth
     }
 
+    pub fn is_graph(&self) -> bool {
+        self.is_graph
+    }
+
     #[allow(dead_code)]
     pub fn pprint(&self) {
         print!("{}:", self.depth);
