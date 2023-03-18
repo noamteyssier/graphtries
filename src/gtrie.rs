@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::{bitgraph::Bitgraph, census::match_child, node::GtrieNode, isomorphism::Conditions};
+use crate::{bitgraph::Bitgraph, census::match_child, isomorphism::Conditions, node::GtrieNode};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -45,10 +45,10 @@ impl Gtrie {
     }
 
     fn insert_recursively_conditional(
-        graph: &Bitgraph, 
-        node: &mut GtrieNode, 
-        k: usize, 
-        conditions: &Conditions
+        graph: &Bitgraph,
+        node: &mut GtrieNode,
+        k: usize,
+        conditions: &Conditions,
     ) {
         if k == graph.n_nodes() {
             node.set_graph(true);
@@ -70,7 +70,6 @@ impl Gtrie {
             Self::insert_recursively_conditional(graph, &mut child, k + 1, conditions);
             node.insert_child(child);
         }
-
     }
 
     /// Checks if a subgraph is in the trie.

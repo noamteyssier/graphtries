@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::{bitgraph::Bitgraph, isomorphism::{Conditions, Condition}};
+use crate::{
+    bitgraph::Bitgraph,
+    isomorphism::{Condition, Conditions},
+};
 use fixedbitset::FixedBitSet;
 
 #[derive(Clone, Debug)]
@@ -98,7 +101,6 @@ impl GtrieNode {
             depth,
         }
     }
-
 
     #[allow(dead_code)]
     pub fn from_bitgraph(graph: &Bitgraph) -> Self {

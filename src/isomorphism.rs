@@ -19,7 +19,11 @@ impl Display for Condition {
 }
 impl Condition {
     pub fn new(u: usize, v: usize) -> Self {
-        Condition { u, v, max: u.max(v) }
+        Condition {
+            u,
+            v,
+            max: u.max(v),
+        }
     }
 }
 
@@ -35,7 +39,12 @@ pub struct CanonicalBasedNauty {
 impl CanonicalBasedNauty {
     pub fn new(adj: FixedBitSet, orbits: Vec<usize>, conditions: Option<Conditions>) -> Self {
         let size = orbits.len();
-        CanonicalBasedNauty { adj, orbits, conditions, size }
+        CanonicalBasedNauty {
+            adj,
+            orbits,
+            conditions,
+            size,
+        }
     }
 
     pub fn adjacency(&self) -> &FixedBitSet {
@@ -77,7 +86,6 @@ impl CanonicalBasedNauty {
         }
 
         println!("--------------------------------");
-
     }
 }
 
@@ -102,7 +110,11 @@ impl CanonicalBasedNauty {
 /// 14.       last_degree[] := current_degree[]
 /// 15.       update current_degree[] removing u_min connections
 /// 16.   return label_canon
-pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize, orbits: &[i32]) -> CanonicalBasedNauty {
+pub fn canonical_based_nauty(
+    adj: &FixedBitSet,
+    size: usize,
+    orbits: &[i32],
+) -> CanonicalBasedNauty {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
     let mut new_orbits = Vec::with_capacity(orbits.len());
 
@@ -273,16 +285,19 @@ fn symmetry_breaking_conditions(orbits: &[usize]) -> Option<Conditions> {
         let mut conditions = Vec::new();
         for o in unique_orbits {
             let mut last = None;
-            orbits.iter().enumerate().filter(|(_, v)| *v == o).for_each(|(i, _)| {
-                if let Some(last) = last {
-                    conditions.push(Condition::new(last, i));
-                }
-                last = Some(i);
-            });
+            orbits
+                .iter()
+                .enumerate()
+                .filter(|(_, v)| *v == o)
+                .for_each(|(i, _)| {
+                    if let Some(last) = last {
+                        conditions.push(Condition::new(last, i));
+                    }
+                    last = Some(i);
+                });
         }
         Some(conditions)
     }
-
 }
 
 /// Algorithm: Finding articulation points
