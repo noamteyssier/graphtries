@@ -1,6 +1,10 @@
+use fixedbitset::FixedBitSet;
+
 use crate::{bitgraph::Bitgraph, node::GtrieNode};
 
-pub fn match_child(node: &mut GtrieNode, used: &[usize], candidates: &mut [usize], graph: &Bitgraph) {
+type Candidates = FixedBitSet;
+
+pub fn match_child(node: &mut GtrieNode, used: &[usize], candidates: &mut Candidates, graph: &Bitgraph) {
     let vertices = matching_vertices(node, &used, graph, candidates);
     for v in vertices {
         let used_2 = insert_to_used(&used, v);
@@ -14,11 +18,10 @@ pub fn match_child(node: &mut GtrieNode, used: &[usize], candidates: &mut [usize
     }
 }
 
-fn matching_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &mut [usize]) -> Vec<usize> {
-    let n_cand = build_candidates(graph, used, candidates);
+fn matching_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &mut Candidates) -> Vec<usize> {
+    build_candidates(graph, used, candidates);
     let mut vertices = Vec::new();
-    for idx in 0..n_cand {
-        let v = candidates[idx];
+    for v in candidates.ones() {
         let mut condition_a = true;
         let mut condition_b = true;
         for (i, u) in used.iter().enumerate() {
@@ -33,16 +36,12 @@ fn matching_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candida
     vertices
 }
 
-fn build_candidates(graph: &Bitgraph, used: &[usize], candidates: &mut [usize]) -> usize {
+fn build_candidates(graph: &Bitgraph, used: &[usize], candidates: &mut Candidates) {
     if used.len() == 0 {
-        for i in 0..graph.n_nodes() {
-            candidates[i] = i;
-        }
-        return graph.n_nodes();
+        candidates.insert_range(..);
     } else {
         let mut v_conn = Vec::new();
         let mut v_min = usize::MAX;
-        let mut n_cand = 0;
         for v in used {
             for n in graph.undir_neighbors(*v).ones() {
                 if used.contains(&n) {
@@ -56,10 +55,8 @@ fn build_candidates(graph: &Bitgraph, used: &[usize], candidates: &mut [usize]) 
             }
         }
         for i in v_conn {
-            candidates[n_cand] = i;
-            n_cand += 1;
+            candidates.insert(i);
         }
-        n_cand
     }
 }
 
@@ -69,6 +66,6 @@ fn insert_to_used(used: &[usize], v: usize) -> Vec<usize> {
     used_2
 }
 
-fn clear_candidates(candidates: &mut [usize]) {
-    candidates.iter_mut().for_each(|x| *x = 0);
+fn clear_candidates(candidates: &mut Candidates) {
+    candidates.clear();
 }
