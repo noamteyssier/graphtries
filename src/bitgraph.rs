@@ -79,8 +79,8 @@ impl Bitgraph {
         self.n_unei[u]
     }
 
-    pub fn overwrite_adjacency(&mut self, adj: FixedBitSet) {
-        self.adj = adj;
+    pub fn overwrite_adjacency(&mut self, adj: &FixedBitSet) {
+        self.adj = adj.clone();
     }
 
     pub fn pprint(&self) {
