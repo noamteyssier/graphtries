@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::bitgraph::Bitgraph;
+use crate::{bitgraph::Bitgraph, isomorphism::{Conditions, Condition}};
 use fixedbitset::FixedBitSet;
 
 #[derive(Clone, Debug)]
@@ -17,6 +17,7 @@ pub struct GtrieNode {
     total_out: usize,
     total_edges: usize,
     frequency: usize,
+    conditions: Option<Conditions>,
 }
 impl Display for GtrieNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -38,6 +39,17 @@ impl Display for GtrieNode {
             }
         }
         s.push_str("]");
+        if let Some(conditions) = &self.conditions {
+            s.push_str(" |");
+            for (idx, c) in conditions.iter().enumerate() {
+                if idx > 0 {
+                    s.push_str(" ");
+                }
+                s.push_str(&format!("{}", c));
+            }
+            s.push_str("|");
+        }
+
         if self.is_graph {
             s.push_str(&format!(" -> {}", self.frequency));
         }
@@ -57,9 +69,37 @@ impl GtrieNode {
             total_out: 0,
             total_edges: 0,
             frequency: 0,
+            conditions: None,
             depth,
         }
     }
+
+    pub fn new_conditional(depth: usize, conditions: &Conditions) -> Self {
+        let possible_conditions = conditions
+            .iter()
+            .filter(|c| c.max < depth)
+            .cloned()
+            .collect::<Vec<Condition>>();
+        if possible_conditions.is_empty() {
+            return GtrieNode::new(depth);
+        }
+        GtrieNode {
+            children: Vec::new(),
+            n_nodes: depth,
+            is_dir: false,
+            is_graph: false,
+            edge_in: FixedBitSet::with_capacity(depth),
+            edge_out: FixedBitSet::with_capacity(depth),
+            total_in: 0,
+            total_out: 0,
+            total_edges: 0,
+            frequency: 0,
+            conditions: Some(possible_conditions),
+            depth,
+        }
+    }
+
+
     #[allow(dead_code)]
     pub fn from_bitgraph(graph: &Bitgraph) -> Self {
         let n_nodes = graph.n_nodes();
@@ -91,6 +131,7 @@ impl GtrieNode {
             total_out,
             total_edges,
             frequency: 0,
+            conditions: None,
             depth: graph.n_nodes(),
         }
     }
@@ -146,6 +187,18 @@ impl GtrieNode {
 
     pub fn increment_frequency(&mut self) {
         self.frequency += 1;
+    }
+
+    pub fn intersect_conditions(&mut self, conditions: &Conditions) {
+        if self.conditions.is_none() {
+            return;
+        }
+        self.conditions.iter_mut().for_each(|c| {
+            c.retain(|x| conditions.contains(x));
+        });
+        if self.conditions.as_ref().unwrap().is_empty() {
+            self.conditions = None;
+        }
     }
 
     #[allow(dead_code)]
