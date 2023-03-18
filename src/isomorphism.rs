@@ -1,4 +1,85 @@
+use std::fmt::Display;
+
 use fixedbitset::FixedBitSet;
+use itertools::Itertools;
+
+/// A struct to represent the orbit-fixing conditions of a graph
+/// Both are vertex indices with the expectation that the first
+/// is the smaller index (i.e. smaller depth).
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Condition {
+    pub u: usize,
+    pub v: usize,
+    pub max: usize,
+}
+impl Display for Condition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}<{}", self.u, self.v)
+    }
+}
+impl Condition {
+    pub fn new(u: usize, v: usize) -> Self {
+        Condition { u, v, max: u.max(v) }
+    }
+}
+
+pub type Conditions = Vec<Condition>;
+
+/// A struct that holds the adjacency matrix and orbits of a graph
+pub struct CanonicalBasedNauty {
+    pub adj: FixedBitSet,
+    pub orbits: Vec<usize>,
+    conditions: Option<Conditions>,
+    size: usize,
+}
+impl CanonicalBasedNauty {
+    pub fn new(adj: FixedBitSet, orbits: Vec<usize>, conditions: Option<Conditions>) -> Self {
+        let size = orbits.len();
+        CanonicalBasedNauty { adj, orbits, conditions, size }
+    }
+
+    pub fn adjacency(&self) -> &FixedBitSet {
+        &self.adj
+    }
+
+    pub fn conditions(&self) -> Option<&Conditions> {
+        self.conditions.as_ref()
+    }
+
+    #[allow(dead_code)]
+    /// Pretty print the adjacency matrix, orbits, and symmetry breaking conditions
+    /// for debugging purposes
+    pub fn pprint(&self) {
+        println!("--------------------------------");
+        print!("Adjacency: ");
+        for u in 0..self.size {
+            for v in 0..self.size {
+                if self.adj.contains(u * self.size + v) {
+                    print!("1 ");
+                } else {
+                    print!("0 ");
+                }
+            }
+        }
+        println!();
+
+        print!("Orbits:");
+        for i in 0..self.orbits.len() {
+            print!("{} ", self.orbits[i]);
+        }
+        println!();
+
+        if let Some(conditions) = &self.conditions {
+            println!("Conditions:");
+            for c in conditions {
+                println!(":: {}", c);
+            }
+        }
+
+        println!("--------------------------------");
+
+    }
+}
 
 /// Algorithm: Converting a graph to a canonical form
 ///
@@ -21,8 +102,9 @@ use fixedbitset::FixedBitSet;
 /// 14.       last_degree[] := current_degree[]
 /// 15.       update current_degree[] removing u_min connections
 /// 16.   return label_canon
-pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize) -> FixedBitSet {
+pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize, orbits: &[i32]) -> CanonicalBasedNauty {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
+    let mut new_orbits = Vec::with_capacity(orbits.len());
 
     let mut degree = vec![0; size];
     let mut global_degree = vec![0; size];
@@ -47,7 +129,14 @@ pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize) -> FixedBitSet {
     // write the new adjacency matrix given the labels
     relabel_adj(adj, &mut new_adj, size, &labels);
 
-    new_adj
+    // write the new orbits
+    relabel_orbits(&orbits, &mut new_orbits, &labels);
+
+    // identify symmetry breaking conditions
+    let conditions = symmetry_breaking_conditions(&new_orbits);
+
+    // return the new adjacency matrix and orbits
+    CanonicalBasedNauty::new(new_adj, new_orbits, conditions)
 }
 
 fn calculate_relabels(
@@ -168,6 +257,32 @@ fn relabel_adj(adj: &FixedBitSet, new_adj: &mut FixedBitSet, size: usize, labels
             }
         }
     }
+}
+
+fn relabel_orbits(orbits: &[i32], new_orbits: &mut Vec<usize>, labels: &[usize]) {
+    labels.iter().for_each(|v| {
+        new_orbits.push(orbits[*v] as usize);
+    });
+}
+
+fn symmetry_breaking_conditions(orbits: &[usize]) -> Option<Conditions> {
+    let unique_orbits = orbits.iter().unique().collect::<Vec<_>>();
+    if unique_orbits.is_empty() {
+        return None;
+    } else {
+        let mut conditions = Vec::new();
+        for o in unique_orbits {
+            let mut last = None;
+            orbits.iter().enumerate().filter(|(_, v)| *v == o).for_each(|(i, _)| {
+                if let Some(last) = last {
+                    conditions.push(Condition::new(last, i));
+                }
+                last = Some(i);
+            });
+        }
+        Some(conditions)
+    }
+
 }
 
 /// Algorithm: Finding articulation points
