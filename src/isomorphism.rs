@@ -68,11 +68,7 @@ fn calculate_relabels(
         };
 
         // Select the minimally connected vertex that is not an articulation point
-        let min_u = select_minimum_vertex(degree, last_degree, global_degree, used, &ap, size, pos);
-
-        // println!("{} => {}", pos, min_u);
-        // println!("---");
-
+        let min_u = select_minimum_vertex(degree, last_degree, global_degree, used, &ap, size);
         used[min_u] = true;
         labels[pos] = min_u;
 
@@ -88,12 +84,8 @@ fn select_minimum_vertex(
     used: &[bool],
     ap: &[usize],
     size: usize,
-    pos: usize,
 ) -> usize {
     let mut min_u = -1;
-    // println!("Degree        : {:?}", degree);
-    // println!("Last Degree   : {:?}", last_degree);
-    // println!("Global Degree : {:?}", global_degree);
     for u in 0..size {
         // Skip if used or is an articulation point
         if used[u] || ap[u] != 0 {
@@ -120,8 +112,6 @@ fn select_minimum_vertex(
                 }
             }
         }
-
-        // println!("{} {} {}", pos, u, min_u);
     }
 
     assert!(min_u >= 0);
@@ -189,7 +179,6 @@ fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -
     let mut ap = vec![0; n];
     for i in 0..n {
         if !visited[i] && !used[i] {
-            // println!("Starting DFS from {}", i);
             dfs_articulation(
                 i,
                 -1,
