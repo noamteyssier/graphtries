@@ -70,12 +70,10 @@ fn build_candidates(
 }
 
 fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
-    used.iter()
-        .enumerate()
-        .all(|(i, u)| {
-            node.out_contains(i) == graph.is_connected(*u, v)
-                && node.in_contains(i) == graph.is_connected(v, *u)
-        })
+    used.iter().enumerate().all(|(i, u)| {
+        node.out_contains(i) == graph.is_connected(*u, v)
+            && node.in_contains(i) == graph.is_connected(v, *u)
+    })
 }
 
 fn clear_bits(candidates: &mut Candidates, connections: &mut Connections) {
