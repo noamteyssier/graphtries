@@ -7,7 +7,6 @@ use std::fmt::Display;
 pub struct Condition {
     pub u: usize,
     pub v: usize,
-    pub max: usize,
 }
 impl Display for Condition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -16,10 +15,10 @@ impl Display for Condition {
 }
 impl Condition {
     pub fn new(u: usize, v: usize) -> Self {
+        assert!(u < v);
         Condition {
             u,
             v,
-            max: u.max(v),
         }
     }
 
@@ -36,12 +35,34 @@ impl Condition {
         }
         true
     }
+
+    pub fn max(&self) -> usize {
+        self.v
+    }
+
+    pub fn min(&self) -> usize {
+        self.u
+    }
 }
 
 // pub type Conditions = Vec<Condition>;
 #[derive(Clone, Debug)]
 pub struct Conditions {
     conditions: Vec<Condition>
+}
+impl Display for Conditions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s = String::new();
+        s.push_str("|");
+        for (idx, c) in self.conditions.iter().enumerate() {
+            if idx > 0 {
+                s.push_str(" ");
+            }
+            s.push_str(&format!("{}", c));
+        }
+        s.push_str("|");
+        write!(f, "{}", s)
+    }
 }
 impl Conditions {
     pub fn from_vec(conditions: Vec<Condition>) -> Self {
