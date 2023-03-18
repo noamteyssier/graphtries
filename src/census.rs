@@ -35,17 +35,10 @@ fn matching_vertices(
 ) -> Vec<usize> {
     build_candidates(graph, used, candidates, connections);
     let mut vertices = Vec::new();
-    for v in candidates.ones() {
-        let mut condition_a = true;
-        let mut condition_b = true;
-        for (i, u) in used.iter().enumerate() {
-            condition_a &= node.out_contains(i) == graph.is_connected(*u, v);
-            condition_b &= node.in_contains(i) == graph.is_connected(v, *u);
-        }
-        if condition_a && condition_b {
-            vertices.push(v);
-        }
-    }
+    candidates
+        .ones()
+        .filter(|v| matches_structure(node, graph, used, *v))
+        .for_each(|v| vertices.push(v));
     clear_bits(candidates, connections);
     vertices
 }
@@ -74,6 +67,15 @@ fn build_candidates(
         }
         candidates.union_with(connections);
     }
+}
+
+fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
+    used.iter()
+        .enumerate()
+        .all(|(i, u)| {
+            node.out_contains(i) == graph.is_connected(*u, v)
+                && node.in_contains(i) == graph.is_connected(v, *u)
+        })
 }
 
 fn clear_bits(candidates: &mut Candidates, connections: &mut Connections) {
