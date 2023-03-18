@@ -61,59 +61,30 @@ impl Gtrie {
         self.root.pprint();
     }
 
-    pub fn census(&self, graph: &Bitgraph) {
+    pub fn census(&mut self, graph: &Bitgraph) {
         let used = Vec::new();
-        for c in self.root.iter_children() {
-            self.match_child(c, &used, &graph);
+        for c in self.root.iter_children_mut() {
+            Self::match_child(c, &used, &graph);
         }
     }
 
-    fn match_node(&self, node: &GtrieNode) -> bool {
-        for i in 0..3 {
-            if i == 1 {
-                if node.in_contains(i) && !node.out_contains(i) {
-                    return true
-                }
-            }
-            else {
-                if node.in_contains(i) || node.out_contains(i) {
-                    return false
-                }
-            }
-        }
-        false
-    }
-
-    fn match_child(&self, node: &GtrieNode, used: &[usize], graph: &Bitgraph) {
-        println!("---------------------------------------");
-        println!("Entering match_child at depth: {}", node.depth());
-        println!("                    with used: {:?}", used);
-        println!("                    with node: {}", node);
-        println!("                node is graph: {}", node.is_graph());
-        let vertices = self.matching_vertices(node, &used, graph);
-        // if node.depth() == 3 && self.match_node(node) {
-        //     unimplemented!();
-        // }
+    fn match_child(node: &mut GtrieNode, used: &[usize], graph: &Bitgraph) {
+        let vertices = Self::matching_vertices(node, &used, graph);
         for v in vertices {
             let mut used_2 = used.to_vec();
-            if node.is_graph() {
-                used_2.push(v);
-                println!("Found a graph!: {}", node);
-                println!("{:?}", used_2);
-            }
             used_2.push(v);
-            // println!("Picking vertex: {v}");
-            for c in node.iter_children() {
-                self.match_child(c, &used_2, graph);
+            if node.is_graph() {
+                node.increment_frequency();
+            } else {
+                for c in node.iter_children_mut() {
+                    Self::match_child(c, &used_2, graph);
+                }
             }
-            // break;
         }
     }
 
-    fn matching_vertices(&self, node: &GtrieNode, used: &[usize], graph: &Bitgraph) -> Vec<usize> {
-        println!("Used: {:?}", used);
-        let cand = self.build_candidates(graph, used);
-        println!("Cand: {:?}", cand);
+    fn matching_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph) -> Vec<usize> {
+        let cand = Self::build_candidates(graph, used);
         let mut vertices = Vec::new();
         for v in cand {
             let mut condition_a = true;
@@ -126,11 +97,10 @@ impl Gtrie {
                 vertices.push(v);
             }
         }
-        println!("Vertices: {:?}", vertices);
         vertices
     }
 
-    fn build_candidates(&self, graph: &Bitgraph, used: &[usize]) -> Vec<usize> {
+    fn build_candidates(graph: &Bitgraph, used: &[usize]) -> Vec<usize> {
         if used.len() == 0 {
             (0..graph.n_nodes()).collect()
         } else {
@@ -149,12 +119,8 @@ impl Gtrie {
                     }
                 }
             }
-            // println!("Conn: {:?}", v_conn);
             for i in v_conn {
                 cand.push(i);
-                // if graph.n_undir_neighbors(i) <= v_min && !used.contains(&i) {
-                //     cand.push(i);
-                // }
             }
             cand
         }
