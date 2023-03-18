@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::{bitgraph::Bitgraph, census::match_child, node::GtrieNode};
+use crate::{bitgraph::Bitgraph, census::match_child, node::GtrieNode, isomorphism::Conditions};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -16,11 +16,13 @@ impl Gtrie {
         }
     }
 
-    pub fn insert(&mut self, graph: &Bitgraph) {
+    pub fn insert(&mut self, graph: &Bitgraph, conditions: Option<&Conditions>) {
         assert!(graph.n_nodes() <= self.max_depth);
-        // println!("---");
-        // graph.pprint();
-        // println!("---");
+        if let Some(conditions) = conditions {
+            Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions);
+        } else {
+            Self::insert_recursively(graph, &mut self.root, 0);
+        }
         Self::insert_recursively(graph, &mut self.root, 0);
     }
 
@@ -40,6 +42,35 @@ impl Gtrie {
             Self::insert_recursively(graph, &mut child, k + 1);
             node.insert_child(child);
         }
+    }
+
+    fn insert_recursively_conditional(
+        graph: &Bitgraph, 
+        node: &mut GtrieNode, 
+        k: usize, 
+        conditions: &Conditions
+    ) {
+        if k == graph.n_nodes() {
+            node.set_graph(true);
+            return;
+        } else {
+            for c in node.iter_children_mut() {
+                if Self::depth_eq(c, graph, k) {
+                    Self::insert_recursively_conditional(graph, c, k + 1, conditions);
+                    return;
+                }
+            }
+            let mut child = if conditions.is_empty() {
+                GtrieNode::new(k + 1)
+            } else {
+                node.intersect_conditions(conditions);
+                GtrieNode::new_conditional(k + 1, conditions)
+            };
+            child.update_adjacency(graph, k + 1);
+            Self::insert_recursively_conditional(graph, &mut child, k + 1, conditions);
+            node.insert_child(child);
+        }
+
     }
 
     /// Checks if a subgraph is in the trie.
