@@ -1,33 +1,7 @@
-use std::fmt::Display;
-
 use fixedbitset::FixedBitSet;
+use crate::symmetry::{Condition, Conditions};
 use itertools::Itertools;
 
-/// A struct to represent the orbit-fixing conditions of a graph
-/// Both are vertex indices with the expectation that the first
-/// is the smaller index (i.e. smaller depth).
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Condition {
-    pub u: usize,
-    pub v: usize,
-    pub max: usize,
-}
-impl Display for Condition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}<{}", self.u, self.v)
-    }
-}
-impl Condition {
-    pub fn new(u: usize, v: usize) -> Self {
-        Condition {
-            u,
-            v,
-            max: u.max(v),
-        }
-    }
-}
-
-pub type Conditions = Vec<Condition>;
 
 /// A struct that holds the adjacency matrix and orbits of a graph
 pub struct CanonicalBasedNauty {
@@ -80,7 +54,7 @@ impl CanonicalBasedNauty {
 
         if let Some(conditions) = &self.conditions {
             println!("Conditions:");
-            for c in conditions {
+            for c in conditions.iter() {
                 println!(":: {}", c);
             }
         }
@@ -296,7 +270,7 @@ fn symmetry_breaking_conditions(orbits: &[usize]) -> Option<Conditions> {
                     last = Some(i);
                 });
         }
-        Some(conditions)
+        Some(Conditions::from_vec(conditions))
     }
 }
 

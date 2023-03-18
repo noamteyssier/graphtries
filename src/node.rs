@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     bitgraph::Bitgraph,
-    isomorphism::{Condition, Conditions},
+    symmetry::{Condition, Conditions},
 };
 use fixedbitset::FixedBitSet;
 
@@ -86,6 +86,7 @@ impl GtrieNode {
         if possible_conditions.is_empty() {
             return GtrieNode::new(depth);
         }
+        let possible_conditions = Conditions::from_vec(possible_conditions);
         GtrieNode {
             children: Vec::new(),
             n_nodes: depth,
@@ -201,6 +202,10 @@ impl GtrieNode {
         if self.conditions.as_ref().unwrap().is_empty() {
             self.conditions = None;
         }
+    }
+
+    pub fn conditions(&self) -> Option<&Conditions> {
+        self.conditions.as_ref()
     }
 
     #[allow(dead_code)]

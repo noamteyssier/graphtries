@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::{bitgraph::Bitgraph, census::match_child, isomorphism::Conditions, node::GtrieNode};
+use crate::{bitgraph::Bitgraph, census::match_child, symmetry::Conditions, node::GtrieNode};
 
 #[derive(Debug)]
 #[allow(dead_code)]
