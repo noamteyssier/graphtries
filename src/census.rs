@@ -4,17 +4,18 @@ use crate::{bitgraph::Bitgraph, node::GtrieNode};
 
 type Candidates = FixedBitSet;
 
-pub fn match_child(node: &mut GtrieNode, used: &[usize], candidates: &mut Candidates, graph: &Bitgraph) {
+pub fn match_child(node: &mut GtrieNode, used: &mut Vec<usize>, candidates: &mut Candidates, graph: &Bitgraph) {
     let vertices = matching_vertices(node, &used, graph, candidates);
     for v in vertices {
-        let used_2 = insert_to_used(&used, v);
+        used.push(v);
         if node.is_graph() {
             node.increment_frequency();
         } else {
             for c in node.iter_children_mut() {
-                match_child(c, &used_2, candidates, graph);
+                match_child(c, used, candidates, graph);
             }
         }
+        used.pop();
     }
 }
 
@@ -58,12 +59,6 @@ fn build_candidates(graph: &Bitgraph, used: &[usize], candidates: &mut Candidate
             candidates.insert(i);
         }
     }
-}
-
-fn insert_to_used(used: &[usize], v: usize) -> Vec<usize> {
-    let mut used_2 = used.to_vec();
-    used_2.push(v);
-    used_2
 }
 
 fn clear_candidates(candidates: &mut Candidates) {
