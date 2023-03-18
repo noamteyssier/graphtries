@@ -63,8 +63,9 @@ impl Gtrie {
     pub fn census(&mut self, graph: &Bitgraph) {
         let mut used = Vec::with_capacity(self.max_depth);
         let mut candidates = FixedBitSet::with_capacity(graph.n_nodes());
+        let mut connections = FixedBitSet::with_capacity(graph.n_nodes());
         for c in self.root.iter_children_mut() {
-            match_child(c, &mut used, &mut candidates, &graph);
+            match_child(c, &mut used, &mut candidates, &mut connections, &graph);
         }
     }
 
