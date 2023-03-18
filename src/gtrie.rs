@@ -54,7 +54,6 @@ impl Gtrie {
         true
     }
 
-
     /// A depth first search that prints out all nodes in the trie.
     #[allow(dead_code)]
     pub fn pprint(&self) {

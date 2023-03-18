@@ -1,8 +1,8 @@
 mod bitgraph;
 mod gtrie;
-mod node;
 mod io;
 mod isomorphism;
+mod node;
 
 use bitgraph::Bitgraph;
 use gtrie::Gtrie;

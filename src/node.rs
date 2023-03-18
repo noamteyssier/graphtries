@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use fixedbitset::FixedBitSet;
 use crate::bitgraph::Bitgraph;
+use fixedbitset::FixedBitSet;
 
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
@@ -105,12 +105,12 @@ impl GtrieNode {
 
     pub fn update_adjacency(&mut self, graph: &Bitgraph, k: usize) {
         for u in 0..k {
-            if graph.is_connected(u, k-1) {
+            if graph.is_connected(u, k - 1) {
                 self.edge_out.insert(u);
                 self.total_out += 1;
                 self.total_edges += 1;
             }
-            if graph.is_connected(k-1, u) {
+            if graph.is_connected(k - 1, u) {
                 self.edge_in.insert(u);
                 self.total_in += 1;
                 self.total_edges += 1;
@@ -134,7 +134,7 @@ impl GtrieNode {
     pub fn iter_children(&self) -> impl Iterator<Item = &Self> {
         self.children.iter()
     }
-    
+
     #[allow(dead_code)]
     pub fn depth(&self) -> usize {
         self.depth
@@ -143,7 +143,7 @@ impl GtrieNode {
     pub fn is_graph(&self) -> bool {
         self.is_graph
     }
-    
+
     pub fn increment_frequency(&mut self) {
         self.frequency += 1;
     }
@@ -160,4 +160,3 @@ impl GtrieNode {
         }
     }
 }
-

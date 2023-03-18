@@ -1,7 +1,10 @@
-use anyhow::{Result, bail};
-use petgraph::{Graph, Directed};
+use anyhow::{bail, Result};
 use graph6_rs::DiGraph;
-use std::{io::{BufRead, BufReader}, fs::File};
+use petgraph::{Directed, Graph};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 pub fn iter_graphs_from_file(path: &str) -> impl Iterator<Item = Graph<(), (), Directed>> {
     let file = File::open(path).unwrap();
@@ -24,7 +27,6 @@ pub fn load_repr(repr: &str) -> Graph<(), (), Directed> {
     }
     g
 }
-
 
 /// Load a graph from a file
 ///

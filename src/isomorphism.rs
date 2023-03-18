@@ -1,6 +1,5 @@
 use fixedbitset::FixedBitSet;
 
-
 /// Algorithm: Converting a graph to a canonical form
 ///
 /// Require: Graph G
@@ -35,7 +34,15 @@ pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize) -> FixedBitSet {
     init_degrees(adj, size, &mut degree, &mut global_degree, &mut last_degree);
 
     // calculate relabeling of vertices
-    calculate_relabels(adj, size, &mut degree, &mut global_degree, &mut last_degree, &mut used, &mut labels);
+    calculate_relabels(
+        adj,
+        size,
+        &mut degree,
+        &mut global_degree,
+        &mut last_degree,
+        &mut used,
+        &mut labels,
+    );
 
     // write the new adjacency matrix given the labels
     relabel_adj(adj, &mut new_adj, size, &labels);
@@ -51,9 +58,8 @@ fn calculate_relabels(
     last_degree: &mut [usize],
     used: &mut [bool],
     labels: &mut [usize],
-    ) {
+) {
     for pos in (0..size).rev() {
-
         // Find articulation points
         let ap = if pos > 2 {
             find_articulation_points(adj, size, &used)
@@ -76,22 +82,23 @@ fn calculate_relabels(
 }
 
 fn select_minimum_vertex(
-    degree: &[usize], 
-    last_degree: &[usize], 
-    global_degree: &[usize], 
-    used: &[bool], 
-    ap: &[usize], 
-    size: usize, 
-    pos: usize
+    degree: &[usize],
+    last_degree: &[usize],
+    global_degree: &[usize],
+    used: &[bool],
+    ap: &[usize],
+    size: usize,
+    pos: usize,
 ) -> usize {
     let mut min_u = -1;
     // println!("Degree        : {:?}", degree);
     // println!("Last Degree   : {:?}", last_degree);
     // println!("Global Degree : {:?}", global_degree);
     for u in 0..size {
-
         // Skip if used or is an articulation point
-        if used[u] || ap[u] != 0 { continue }
+        if used[u] || ap[u] != 0 {
+            continue;
+        }
 
         // Iteratively replace min_u to the smallest degree vertex
         if min_u < 0 || degree[u] < degree[min_u as usize] {
@@ -100,7 +107,6 @@ fn select_minimum_vertex(
 
         // In the case of ties
         } else if degree[u] == degree[min_u as usize] {
-
             // Tie breaker 1: last_degree
             if last_degree[u] < last_degree[min_u as usize] {
                 // println!("COND2");
@@ -123,7 +129,13 @@ fn select_minimum_vertex(
 }
 
 /// Deincrements the degree of all vertices adjacent to u
-fn update_degree(adj: &FixedBitSet, size: usize, degree: &mut [usize], last_degree: &mut [usize], u: usize) {
+fn update_degree(
+    adj: &FixedBitSet,
+    size: usize,
+    degree: &mut [usize],
+    last_degree: &mut [usize],
+    u: usize,
+) {
     for v in 0..size {
         last_degree[v] = degree[v];
         if adj.contains(u * size + v) {
@@ -135,8 +147,13 @@ fn update_degree(adj: &FixedBitSet, size: usize, degree: &mut [usize], last_degr
     }
 }
 
-
-fn init_degrees(adj: &FixedBitSet, n: usize, degree: &mut [usize], global_degree: &mut [usize], last_degree: &mut [usize]) {
+fn init_degrees(
+    adj: &FixedBitSet,
+    n: usize,
+    degree: &mut [usize],
+    global_degree: &mut [usize],
+    last_degree: &mut [usize],
+) {
     for u in 0..n {
         for v in 0..n {
             if adj.contains(u * n + v) {
@@ -163,7 +180,6 @@ fn relabel_adj(adj: &FixedBitSet, new_adj: &mut FixedBitSet, size: usize, labels
     }
 }
 
-
 /// Algorithm: Finding articulation points
 fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -> Vec<usize> {
     let mut timer = 0;
@@ -174,7 +190,18 @@ fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -
     for i in 0..n {
         if !visited[i] && !used[i] {
             // println!("Starting DFS from {}", i);
-            dfs_articulation(i, -1, &mut timer, &mut visited, &mut tin, &mut low, adj_matrix, n, &mut ap, used);
+            dfs_articulation(
+                i,
+                -1,
+                &mut timer,
+                &mut visited,
+                &mut tin,
+                &mut low,
+                adj_matrix,
+                n,
+                &mut ap,
+                used,
+            );
         }
     }
     ap
@@ -184,13 +211,13 @@ fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -
 ///
 /// Similar to CPP implementation here: https://cp-algorithms.com/graph/cutpoints.html#algorithm
 fn dfs_articulation(
-    v: usize, 
-    p: i32, 
-    timer: &mut i32, 
-    visited: &mut Vec<bool>, 
-    tin: &mut Vec<i32>, 
-    low: &mut Vec<i32>, 
-    adj_matrix: &FixedBitSet, 
+    v: usize,
+    p: i32,
+    timer: &mut i32,
+    visited: &mut Vec<bool>,
+    tin: &mut Vec<i32>,
+    low: &mut Vec<i32>,
+    adj_matrix: &FixedBitSet,
     n: usize,
     ap: &mut Vec<usize>,
     used: &[bool],
@@ -209,7 +236,9 @@ fn dfs_articulation(
             if visited[to] {
                 low[v] = std::cmp::min(low[v], tin[to]);
             } else {
-                dfs_articulation(to, v as i32, timer, visited, tin, low, adj_matrix, n, ap, used);
+                dfs_articulation(
+                    to, v as i32, timer, visited, tin, low, adj_matrix, n, ap, used,
+                );
                 low[v] = std::cmp::min(low[v], low[to]);
                 if low[to] >= tin[v] && p != -1 {
                     ap[v] = 1;
@@ -223,11 +252,9 @@ fn dfs_articulation(
     }
 }
 
-
 #[cfg(test)]
 mod testing {
     use fixedbitset::FixedBitSet;
-
 
     fn insert_graph(adj: &mut FixedBitSet, n: usize, u: usize, v: usize) {
         adj.insert(u * n + v);
@@ -242,7 +269,7 @@ mod testing {
         insert_graph(&mut adj, n, 1, 0);
         insert_graph(&mut adj, n, 1, 2);
         insert_graph(&mut adj, n, 2, 3);
-        
+
         let ap = super::find_articulation_points(&adj, n, &used);
         assert_eq!(ap, vec![0, 0, 1, 0]);
     }
@@ -255,7 +282,7 @@ mod testing {
         insert_graph(&mut adj, n, 0, 1);
         insert_graph(&mut adj, n, 1, 2);
         insert_graph(&mut adj, n, 2, 3);
-        
+
         let ap = super::find_articulation_points(&adj, n, &used);
         assert_eq!(ap, vec![0, 1, 1, 0]);
     }
@@ -269,7 +296,7 @@ mod testing {
     //     insert_graph(&mut adj, n, 1, 0);
     //     insert_graph(&mut adj, n, 1, 2);
     //     insert_graph(&mut adj, n, 2, 3);
-    //     
+    //
     //     let ap = super::find_articulation_points(&adj, n, &used);
     //     assert_eq!(ap, vec![0, 0, 0, 0]);
     // }
@@ -282,9 +309,8 @@ mod testing {
     //     insert_graph(&mut adj, n, 0, 1);
     //     insert_graph(&mut adj, n, 1, 2);
     //     insert_graph(&mut adj, n, 2, 3);
-    //     
+    //
     //     let ap = super::find_articulation_points(&adj, n, &used);
     //     assert_eq!(ap, vec![0, 1, 0, 0]);
     // }
-
 }

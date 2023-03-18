@@ -1,7 +1,5 @@
-
 use fixedbitset::FixedBitSet;
-use petgraph::{Graph, EdgeType};
-
+use petgraph::{EdgeType, Graph};
 
 pub struct Bitgraph {
     adj: FixedBitSet,
@@ -38,7 +36,15 @@ impl Bitgraph {
             n_unei[src.index()] += 2;
             n_dnei[src.index()] += 1;
         }
-        Bitgraph { adj, n, is_dir, dnei, unei, n_unei, n_dnei }
+        Bitgraph {
+            adj,
+            n,
+            is_dir,
+            dnei,
+            unei,
+            n_unei,
+            n_dnei,
+        }
     }
 
     pub fn is_connected(&self, u: usize, v: usize) -> bool {
@@ -99,10 +105,7 @@ mod testing {
     use super::*;
 
     fn build_graph() -> Graph<(), (), Directed> {
-        let edges = vec![
-            (1, 0),
-            (2, 0)
-        ];
+        let edges = vec![(1, 0), (2, 0)];
         let graph = Graph::from_edges(&edges);
         graph
     }
@@ -125,4 +128,3 @@ mod testing {
         }
     }
 }
-
