@@ -10,3 +10,6 @@ anyhow = "1.0.69"
 fixedbitset = "0.4.2"
 graph6-rs = "0.1.6"
 petgraph = "0.6.3"
+
+[profile.release]
+debug = true
