@@ -16,6 +16,7 @@ pub struct GtrieNode {
     total_in: usize,
     total_out: usize,
     total_edges: usize,
+    frequency: usize,
 }
 impl Display for GtrieNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -37,6 +38,9 @@ impl Display for GtrieNode {
             }
         }
         s.push_str("]");
+        if self.is_graph {
+            s.push_str(&format!(" -> {}", self.frequency));
+        }
         write!(f, "{}", s)
     }
 }
@@ -52,6 +56,7 @@ impl GtrieNode {
             total_in: 0,
             total_out: 0,
             total_edges: 0,
+            frequency: 0,
             depth,
         }
     }
@@ -85,6 +90,7 @@ impl GtrieNode {
             total_in,
             total_out,
             total_edges,
+            frequency: 0,
             depth: graph.n_nodes(),
         }
     }
@@ -136,6 +142,10 @@ impl GtrieNode {
 
     pub fn is_graph(&self) -> bool {
         self.is_graph
+    }
+    
+    pub fn increment_frequency(&mut self) {
+        self.frequency += 1;
     }
 
     #[allow(dead_code)]
