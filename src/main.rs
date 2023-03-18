@@ -1,4 +1,5 @@
 mod bitgraph;
+mod census;
 mod gtrie;
 mod io;
 mod isomorphism;
