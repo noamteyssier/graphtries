@@ -6,11 +6,12 @@ type Candidates = FixedBitSet;
 type Connections = FixedBitSet;
 
 pub fn match_child(
-        node: &mut GtrieNode, 
-        used: &mut Vec<usize>, 
-        candidates: &mut Candidates, 
-        connections: &mut Connections,
-        graph: &Bitgraph) {
+    node: &mut GtrieNode,
+    used: &mut Vec<usize>,
+    candidates: &mut Candidates,
+    connections: &mut Connections,
+    graph: &Bitgraph,
+) {
     let vertices = matching_vertices(node, &used, graph, candidates, connections);
     for v in vertices {
         used.push(v);
@@ -26,11 +27,11 @@ pub fn match_child(
 }
 
 fn matching_vertices(
-        node: &GtrieNode, 
-        used: &[usize], 
-        graph: &Bitgraph, 
-        candidates: &mut Candidates,
-        connections: &mut Connections
+    node: &GtrieNode,
+    used: &[usize],
+    graph: &Bitgraph,
+    candidates: &mut Candidates,
+    connections: &mut Connections,
 ) -> Vec<usize> {
     build_candidates(graph, used, candidates, connections);
     let mut vertices = Vec::new();
@@ -50,11 +51,11 @@ fn matching_vertices(
 }
 
 fn build_candidates(
-    graph: &Bitgraph, 
-    used: &[usize], 
-    candidates: &mut Candidates, 
-    connections: &mut Connections) 
-{
+    graph: &Bitgraph,
+    used: &[usize],
+    candidates: &mut Candidates,
+    connections: &mut Connections,
+) {
     if used.len() == 0 {
         candidates.insert_range(..);
     } else {

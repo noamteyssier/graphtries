@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::{bitgraph::Bitgraph, node::GtrieNode, census::match_child};
+use crate::{bitgraph::Bitgraph, census::match_child, node::GtrieNode};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -68,5 +68,4 @@ impl Gtrie {
             match_child(c, &mut used, &mut candidates, &mut connections, &graph);
         }
     }
-
 }
