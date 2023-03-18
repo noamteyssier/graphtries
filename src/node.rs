@@ -80,7 +80,7 @@ impl GtrieNode {
     pub fn new_conditional(depth: usize, conditions: &Conditions) -> Self {
         let possible_conditions = conditions
             .iter()
-            .filter(|c| c.max < depth)
+            .filter(|c| c.max() < depth)
             .cloned()
             .collect::<Vec<Condition>>();
         if possible_conditions.is_empty() {
