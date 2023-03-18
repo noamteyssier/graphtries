@@ -25,97 +25,142 @@ use fixedbitset::FixedBitSet;
 pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize) -> FixedBitSet {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
 
-    let mut global_adj = vec![vec![0; size]; size];
-    let mut current_degree = vec![0; size];
+    let mut degree = vec![0; size];
     let mut global_degree = vec![0; size];
     let mut used = vec![false; size];
     let mut last_degree = vec![0; size];
     let mut labels = vec![0; size];
 
     // initializes the degrees
-    for u in 0..size {
-        for v in 0..size {
-            if adj.contains(u * size + v) || adj.contains(v * size + u) {
-                current_degree[u] += 1;
-                global_degree[u] += 1;
-            }
-            if adj.contains(u * size + v) {
-                global_adj[u][v] = 1;
-            }
-            if adj.contains(v * size + u) {
-                global_adj[v][u] = 1;
-            }
-        }
-    }
+    init_degrees(adj, size, &mut degree, &mut global_degree, &mut last_degree);
 
-    // println!("----");
-    // for v in global_adj.iter() {
-    //     println!("{:?}", v);
-    // }
-    // println!("----");
+    // calculate relabeling of vertices
+    calculate_relabels(adj, size, &mut degree, &mut global_degree, &mut last_degree, &mut used, &mut labels);
 
+    // write the new adjacency matrix given the labels
+    relabel_adj(adj, &mut new_adj, size, &labels);
+
+    new_adj
+}
+
+fn calculate_relabels(
+    adj: &FixedBitSet,
+    size: usize,
+    degree: &mut [usize],
+    global_degree: &mut [usize],
+    last_degree: &mut [usize],
+    used: &mut [bool],
+    labels: &mut [usize],
+    ) {
     for pos in (0..size).rev() {
-        // println!("pos: {}", pos);
-        let ap = if pos > 1 {
+
+        // Find articulation points
+        let ap = if pos > 2 {
             find_articulation_points(adj, size, &used)
         } else {
             vec![0; size]
         };
-        // println!("{:?}", ap);
 
-        let mut min_u = -1;
-        for u in 0..size {
+        // Select the minimally connected vertex that is not an articulation point
+        let min_u = select_minimum_vertex(degree, last_degree, global_degree, used, &ap, size, pos);
 
-            // Skip if used or is an articulation point
-            if used[u] || ap[u] != 0 { continue }
+        // println!("{} => {}", pos, min_u);
+        // println!("---");
 
-            // Iteratively replace min_u to the smallest degree vertex
-            if min_u < 0 || current_degree[u] < current_degree[min_u as usize] {
+        used[min_u] = true;
+        labels[pos] = min_u;
+
+        // update current degree removing min_u connections
+        update_degree(adj, size, degree, last_degree, min_u);
+    }
+}
+
+fn select_minimum_vertex(
+    degree: &[usize], 
+    last_degree: &[usize], 
+    global_degree: &[usize], 
+    used: &[bool], 
+    ap: &[usize], 
+    size: usize, 
+    pos: usize
+) -> usize {
+    let mut min_u = -1;
+    // println!("Degree        : {:?}", degree);
+    // println!("Last Degree   : {:?}", last_degree);
+    // println!("Global Degree : {:?}", global_degree);
+    for u in 0..size {
+
+        // Skip if used or is an articulation point
+        if used[u] || ap[u] != 0 { continue }
+
+        // Iteratively replace min_u to the smallest degree vertex
+        if min_u < 0 || degree[u] < degree[min_u as usize] {
+            // println!("COND1");
+            min_u = u as i32;
+
+        // In the case of ties
+        } else if degree[u] == degree[min_u as usize] {
+
+            // Tie breaker 1: last_degree
+            if last_degree[u] < last_degree[min_u as usize] {
+                // println!("COND2");
                 min_u = u as i32;
 
-            // In the case of ties
-            } else if current_degree[u] == current_degree[min_u as usize] {
-
-                // Tie breaker 1: last_degree
-                if last_degree[u] < last_degree[min_u as usize] {
+            // Tie breaker 2: global_degree
+            } else if last_degree[u] == last_degree[min_u as usize] {
+                if global_degree[u] < global_degree[min_u as usize] {
+                    // println!("COND3, {} < {}", global_degree[u], global_degree[min_u as usize]);
                     min_u = u as i32;
-
-                // Tie breaker 2: global_degree
-                } else if last_degree[u] == last_degree[min_u as usize] {
-                    if global_degree[u] < global_degree[min_u as usize] {
-                        min_u = u as i32;
-                    }
                 }
             }
         }
 
-        // println!("min_u: {}", min_u);
+        // println!("{} {} {}", pos, u, min_u);
+    }
 
-        used[min_u as usize] = true;
-        labels[pos] = min_u as usize;
-        last_degree.iter_mut().for_each(|x| *x = current_degree[*x as usize]);
+    assert!(min_u >= 0);
+    min_u as usize
+}
 
-        // update current degree removing min_u connections
-        for v in 0..size {
-            if adj.contains(min_u as usize * size + v) {
-                current_degree[v] -= 1;
+/// Deincrements the degree of all vertices adjacent to u
+fn update_degree(adj: &FixedBitSet, size: usize, degree: &mut [usize], last_degree: &mut [usize], u: usize) {
+    for v in 0..size {
+        last_degree[v] = degree[v];
+        if adj.contains(u * size + v) {
+            degree[v] -= 1;
+        }
+        if adj.contains(v * size + u) {
+            degree[v] -= 1;
+        }
+    }
+}
+
+
+fn init_degrees(adj: &FixedBitSet, n: usize, degree: &mut [usize], global_degree: &mut [usize], last_degree: &mut [usize]) {
+    for u in 0..n {
+        for v in 0..n {
+            if adj.contains(u * n + v) {
+                degree[u] += 1;
+                global_degree[u] += 1;
+                last_degree[u] += 1;
             }
-            if adj.contains(v * size + min_u as usize) {
-                current_degree[v] -= 1;
+            if adj.contains(v * n + u) {
+                degree[u] += 1;
+                global_degree[u] += 1;
+                last_degree[u] += 1;
             }
         }
     }
+}
 
-    // write the new adjacency matrix given the labels
+fn relabel_adj(adj: &FixedBitSet, new_adj: &mut FixedBitSet, size: usize, labels: &[usize]) {
     for u in 0..size {
         for v in 0..size {
-            if adj.contains(u * size + v) {
-                new_adj.insert(labels[u] * size + labels[v]);
+            if adj.contains(labels[u] * size + labels[v]) {
+                new_adj.insert(u * size + v);
             }
         }
     }
-
-    new_adj
 }
 
 
@@ -128,7 +173,7 @@ fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -
     let mut ap = vec![0; n];
     for i in 0..n {
         if !visited[i] && !used[i] {
-            println!("Starting DFS from {}", i);
+            // println!("Starting DFS from {}", i);
             dfs_articulation(i, -1, &mut timer, &mut visited, &mut tin, &mut low, adj_matrix, n, &mut ap, used);
         }
     }
