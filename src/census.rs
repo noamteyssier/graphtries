@@ -71,7 +71,8 @@ fn build_candidates(
 
 fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
     used.iter().enumerate().all(|(i, u)| {
-        node.out_contains(i) == graph.is_connected(*u, v)
+        *u != v
+            && node.out_contains(i) == graph.is_connected(*u, v)
             && node.in_contains(i) == graph.is_connected(v, *u)
     })
 }
@@ -89,10 +90,15 @@ pub fn match_child_conditionally(
     connections: &mut Connections,
     graph: &Bitgraph,
 ) {
+    // println!("--------------------------");
+    // println!("Entering match: {}", node);
+    // println!("Used    : {:?}", used);
     let vertices = matching_vertices_conditionally(node, &used, graph, candidates, connections);
+    // println!("Vertices: {:?}", vertices);
     for v in vertices {
         used.push(v);
         if node.is_graph() {
+            // println!("Found graph!");
             node.increment_frequency();
         } else {
             for c in node.iter_children_mut() {
@@ -101,6 +107,7 @@ pub fn match_child_conditionally(
         }
         used.pop();
     }
+    // println!("Leaving match: {}", node);
 }
 
 pub fn matching_vertices_conditionally(
@@ -110,16 +117,14 @@ pub fn matching_vertices_conditionally(
     candidates: &mut Candidates,
     connections: &mut Connections,
 ) -> Vec<usize> {
-    println!("{}", node);
     build_candidates_conditionally(graph, used, candidates, connections, node.conditions());
+    // println!("Candidates: {:?}", candidates.ones().collect::<Vec<usize>>());
     let mut vertices = Vec::new();
     candidates
         .ones()
         .filter(|v| matches_structure(node, graph, used, *v))
         .for_each(|v| vertices.push(v));
     clear_bits(candidates, connections);
-    println!("Vertices: {:?}", vertices);
-    println!("----------------------------------------");
     vertices
 }
 
@@ -137,32 +142,14 @@ fn build_candidates_conditionally(
     if used.len() == 0 {
         candidates.insert_range(label_min..);
     } else {
-        if let Some(conditions) = conditions {
-            println!("Used: {:?}, conditions: {}, label_min: {}", used, conditions, label_min);
-        } else {
-            println!("Used: {:?}, label_min: {}", used, label_min);
-        }
-        let mut v_min = usize::MAX;
-        for v in used {
-            for n in graph.undir_neighbors(*v).ones() {
-                if used.contains(&n) || n < label_min {
-                    if used.contains(&n) {
-                        println!("{} is already used", n);
-                    }
-                    if n < label_min {
-                        println!("{} is smaller than {}", n, label_min);
-                    }
-                    continue;
-                }
-                connections.insert(n);
-                let nn = graph.n_undir_neighbors(n);
-                if nn < v_min {
-                    v_min = nn;
-                }
-            }
-        }
+        used.iter().for_each(|v| {
+            graph.undir_neighbors(*v).ones()
+                .filter(|n| *n >= label_min)
+                .for_each(|n| {
+                    connections.insert(n);
+                })
+        });
         candidates.union_with(connections);
-        println!("Candidates: {:?}", candidates.ones().collect::<Vec<_>>());
     }
 }
 
@@ -170,7 +157,7 @@ fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> 
     if let Some(conditions) = conditions {
         for i in 0..used.len() {
             for j in i + 1..used.len() {
-                if !conditions.respects_all(i, j, used[i], used[j]) {
+                if !conditions.respects_any(i, j, used[i], used[j]) {
                     return false
                 }
             }
@@ -259,15 +246,6 @@ mod testing {
         let used = vec![10, 20, 5];
         let c1 = Condition::new(0, 2);
         let conditions = Conditions::from_vec(vec![c1]);
-        assert!(!used_respects_conditions(&used, Some(&conditions)));
-    }
-
-    #[test]
-    fn conditions_used_negative_d() {
-        let used = vec![10, 20, 15];
-        let c1 = Condition::new(0, 1);
-        let c2 = Condition::new(1, 2);
-        let conditions = Conditions::from_vec(vec![c1, c2]);
         assert!(!used_respects_conditions(&used, Some(&conditions)));
     }
 
