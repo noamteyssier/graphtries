@@ -1,73 +1,123 @@
 use fixedbitset::FixedBitSet;
 use crate::{bitgraph::Bitgraph, node::GtrieNode, symmetry::Conditions};
 
-type Candidates = FixedBitSet;
-type Connections = FixedBitSet;
+pub struct Candidates {
+    /// Mutable list reflecting the current set of candidates.
+    candidates: Vec<usize>,
 
-pub fn match_child(
-    node: &mut GtrieNode,
-    used: &mut Vec<usize>,
-    candidates: &mut Candidates,
-    connections: &mut Connections,
-    graph: &Bitgraph,
-) {
-    let vertices = matching_vertices(node, &used, graph, candidates, connections);
-    for v in vertices {
-        used.push(v);
-        if node.is_graph() {
-            node.increment_frequency();
+    /// FixedBitSet used to keep track of the candidates already added.
+    blacklist: FixedBitSet,
+
+    /// Number of candidates in the list.
+    n: usize,
+
+    /// Number of possible candidates.
+    size: usize,
+}
+impl Candidates {
+    pub fn new(size: usize) -> Self {
+        Candidates {
+            candidates: vec![0; size],
+            blacklist: FixedBitSet::with_capacity(size),
+            n: 0,
+            size,
+        }
+    }
+
+    pub fn insert(&mut self, idx: usize) {
+        if !self.blacklist.contains(idx) {
+            self.candidates[self.n] = idx;
+            self.blacklist.insert(idx);
+            self.n += 1;
+        }
+    }
+
+    pub fn fill(&mut self) {
+        for i in 0..self.size {
+            self.insert(i);
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<usize> {
+        if self.n == 0 {
+            None
         } else {
-            for c in node.iter_children_mut() {
-                match_child(c, used, candidates, connections, graph);
-            }
+            self.n -= 1;
+            let idx = self.candidates[self.n];
+            Some(idx)
         }
-        used.pop();
+    }
+
+    pub fn clear(&mut self) {
+        self.n = 0;
+        self.blacklist.clear();
     }
 }
 
+// pub fn match_child(
+//     node: &mut GtrieNode,
+//     used: &mut Vec<usize>,
+//     candidates: &mut Candidates,
+//     connections: &mut Connections,
+//     graph: &Bitgraph,
+// ) {
+//     let vertices = matching_vertices(node, &used, graph, candidates, connections);
+//     for v in vertices {
+//         used.push(v);
+//         if node.is_graph() {
+//             node.increment_frequency();
+//         } else {
+//             for c in node.iter_children_mut() {
+//                 match_child(c, used, candidates, connections, graph);
+//             }
+//         }
+//         used.pop();
+//     }
+// }
 
-fn matching_vertices(
-    node: &GtrieNode,
-    used: &[usize],
-    graph: &Bitgraph,
-    candidates: &mut Candidates,
-    connections: &mut Connections,
-) -> Vec<usize> {
-    build_candidates(graph, used, candidates, connections);
-    let mut vertices = Vec::new();
-    candidates
-        .ones()
-        .filter(|v| matches_structure(node, graph, used, *v))
-        .for_each(|v| vertices.push(v));
-    clear_bits(candidates, connections);
-    vertices
-}
 
-fn build_candidates(
-    graph: &Bitgraph,
-    used: &[usize],
-    candidates: &mut Candidates,
-    connections: &mut Connections,
-) {
-    if used.len() == 0 {
-        candidates.insert_range(..);
-    } else {
-        let mut v_min = usize::MAX;
-        for v in used {
-            for n in graph.undir_neighbors(*v).ones() {
-                if used.contains(&n) {
-                    continue;
-                }
-                connections.insert(n);
-                let nn = graph.n_undir_neighbors(n);
-                if nn < v_min {
-                    v_min = nn;
-                }
-            }
-        }
-        candidates.union_with(connections);
-    }
-}
+// fn matching_vertices(
+//     node: &GtrieNode,
+//     used: &[usize],
+//     graph: &Bitgraph,
+//     candidates: &mut Candidates,
+//     connections: &mut Connections,
+// ) -> Vec<usize> {
+//     build_candidates(graph, used, candidates, connections);
+//     let mut vertices = Vec::new();
+//     candidates
+//         .ones()
+//         .filter(|v| matches_structure(node, graph, used, *v))
+//         .for_each(|v| vertices.push(v));
+//     clear_bits(candidates, connections);
+//     vertices
+// }
+
+// fn build_candidates(
+//     graph: &Bitgraph,
+//     used: &[usize],
+//     candidates: &mut Candidates,
+//     connections: &mut Connections,
+// ) {
+//     if used.len() == 0 {
+//         candidates.insert_range(..);
+//     } else {
+//         let mut v_min = usize::MAX;
+//         for v in used {
+//             for n in graph.undir_neighbors(*v).ones() {
+//                 if used.contains(&n) {
+//                     continue;
+//                 }
+//                 connections.insert(n);
+//                 let nn = graph.n_undir_neighbors(n);
+//                 if nn < v_min {
+//                     v_min = nn;
+//                 }
+//             }
+//         }
+//         candidates.union_with(connections);
+//     }
+// }
 
 fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
     used.iter().enumerate().all(|(i, u)| {
@@ -87,13 +137,12 @@ pub fn match_child_conditionally(
     node: &mut GtrieNode,
     used: &mut Vec<usize>,
     candidates: &mut Candidates,
-    connections: &mut Connections,
     graph: &Bitgraph,
 ) {
     // println!("--------------------------");
     // println!("Entering match: {}", node);
     // println!("Used    : {:?}", used);
-    let vertices = matching_vertices_conditionally(node, &used, graph, candidates, connections);
+    let vertices = matching_vertices_conditionally(node, &used, graph, candidates);
     // println!("Vertices: {:?}", vertices);
     for v in vertices {
         used.push(v);
@@ -102,7 +151,7 @@ pub fn match_child_conditionally(
             node.increment_frequency();
         } else {
             for c in node.iter_children_mut() {
-                match_child_conditionally(c, used, candidates, connections, graph);
+                match_child_conditionally(c, used, candidates, graph);
             }
         }
         used.pop();
@@ -115,20 +164,21 @@ pub fn matching_vertices_conditionally(
     used: &[usize],
     graph: &Bitgraph,
     candidates: &mut Candidates,
-    connections: &mut Connections,
 ) -> Vec<usize> {
-    build_candidates_conditionally(graph, used, candidates, connections, node.conditions());
+    build_candidates_conditionally(graph, used, candidates, node.conditions());
     let vertices = build_vertices(node, used, graph, candidates);
-    clear_bits(candidates, connections);
+    // clear_bits(candidates, connections);
     vertices
 }
 
-fn build_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &Candidates) -> Vec<usize> {
+fn build_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &mut Candidates) -> Vec<usize> {
     let mut vertices = Vec::new();
-    candidates
-        .ones()
-        .filter(|v| matches_structure(node, graph, used, *v))
-        .for_each(|v| vertices.push(v));
+    while let Some(v) = candidates.pop() {
+        if matches_structure(node, graph, used, v) {
+            vertices.push(v);
+        }
+    }
+    candidates.clear();
     vertices
 }
 
@@ -136,7 +186,6 @@ fn build_candidates_conditionally(
     graph: &Bitgraph,
     used: &[usize],
     candidates: &mut Candidates,
-    connections: &mut Connections,
     conditions: Option<&Conditions>,
 ) {
     if !used_respects_conditions(used, conditions) {
@@ -144,17 +193,16 @@ fn build_candidates_conditionally(
     }
     let label_min = minimal_possible_index(used, conditions);
     if used.len() == 0 {
-        candidates.insert_range(label_min..);
+        candidates.fill();
     } else {
         used.iter().for_each(|v| {
             graph.fast_neighbors(*v)
                 .iter()
                 .filter(|n| **n >= label_min)
                 .for_each(|n| {
-                    connections.insert(*n);
+                    candidates.insert(*n);
                 })
         });
-        candidates.union_with(connections);
     }
 }
 
@@ -185,10 +233,10 @@ fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> us
     }
 }
 
-fn clear_bits(candidates: &mut Candidates, connections: &mut Connections) {
-    candidates.clear();
-    connections.clear();
-}
+// fn clear_bits(candidates: &mut Candidates, connections: &mut Connections) {
+//     candidates.clear();
+//     connections.clear();
+// }
 
 #[cfg(test)]
 mod testing {
