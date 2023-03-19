@@ -94,8 +94,8 @@ impl Gtrie {
         let mut used = Vec::with_capacity(self.max_depth);
         let mut candidates = FixedBitSet::with_capacity(graph.n_nodes());
         let mut connections = FixedBitSet::with_capacity(graph.n_nodes());
+
         for c in self.root.iter_children_mut() {
-            // match_child(c, &mut used, &mut candidates, &mut connections, &graph);
             match_child_conditionally(c, &mut used, &mut candidates, &mut connections, graph)
         }
     }
