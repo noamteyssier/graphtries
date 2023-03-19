@@ -33,9 +33,18 @@ impl Bitgraph {
             dnei[src.index()].insert(dst.index());
             unei[src.index()].insert(dst.index());
             unei[dst.index()].insert(src.index());
-            n_unei[src.index()] += 2;
             n_dnei[src.index()] += 1;
         }
+        
+        for u in 0..n {
+            for v in u+1..n {
+                if adj.contains(u * n + v) || adj.contains(v * n + u) {
+                    n_unei[u] += 1;
+                    n_unei[v] += 1;
+                }
+            }
+        }
+
         Bitgraph {
             adj,
             n,
