@@ -17,6 +17,9 @@ pub struct Bitgraph {
 
     /// Number of undirected neighbors
     n_unei: Vec<usize>,
+
+    /// Fast neighbors
+    neighbors: Vec<Vec<usize>>,
 }
 impl Bitgraph {
     pub fn from_graph<Ty: EdgeType>(graph: &Graph<(), (), Ty>) -> Self {
@@ -27,6 +30,7 @@ impl Bitgraph {
         let mut unei = vec![FixedBitSet::with_capacity(n); n];
         let mut n_unei = vec![0; n];
         let mut n_dnei = vec![0; n];
+        let mut neighbors = vec![Vec::with_capacity(n); n];
         for edge in graph.edge_indices() {
             let (src, dst) = graph.edge_endpoints(edge).unwrap();
             adj.insert(src.index() * n + dst.index());
@@ -41,6 +45,8 @@ impl Bitgraph {
                 if adj.contains(u * n + v) || adj.contains(v * n + u) {
                     n_unei[u] += 1;
                     n_unei[v] += 1;
+                    neighbors[u].push(v);
+                    neighbors[v].push(u);
                 }
             }
         }
@@ -53,6 +59,7 @@ impl Bitgraph {
             unei,
             n_unei,
             n_dnei,
+            neighbors,
         }
     }
 
@@ -90,6 +97,10 @@ impl Bitgraph {
 
     pub fn overwrite_adjacency(&mut self, adj: &FixedBitSet) {
         self.adj = adj.clone();
+    }
+
+    pub fn fast_neighbors(&self, u: usize) -> &Vec<usize> {
+        &self.neighbors[u]
     }
 
     pub fn pprint(&self) {
