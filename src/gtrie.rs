@@ -1,6 +1,6 @@
 use fixedbitset::FixedBitSet;
 
-use crate::{bitgraph::Bitgraph, census::{match_child, match_child_conditionally}, symmetry::Conditions, node::GtrieNode};
+use crate::{bitgraph::Bitgraph, census::{Candidates, match_child_conditionally}, symmetry::Conditions, node::GtrieNode};
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -92,11 +92,10 @@ impl Gtrie {
 
     pub fn census(&mut self, graph: &Bitgraph) {
         let mut used = Vec::with_capacity(self.max_depth);
-        let mut candidates = FixedBitSet::with_capacity(graph.n_nodes());
-        let mut connections = FixedBitSet::with_capacity(graph.n_nodes());
+        let mut candidates = Candidates::new(graph.n_nodes());
 
         for c in self.root.iter_children_mut() {
-            match_child_conditionally(c, &mut used, &mut candidates, &mut connections, graph)
+            match_child_conditionally(c, &mut used, &mut candidates, graph)
         }
     }
 }
