@@ -118,13 +118,17 @@ pub fn matching_vertices_conditionally(
     connections: &mut Connections,
 ) -> Vec<usize> {
     build_candidates_conditionally(graph, used, candidates, connections, node.conditions());
-    // println!("Candidates: {:?}", candidates.ones().collect::<Vec<usize>>());
+    let vertices = build_vertices(node, used, graph, candidates);
+    clear_bits(candidates, connections);
+    vertices
+}
+
+fn build_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &Candidates) -> Vec<usize> {
     let mut vertices = Vec::new();
     candidates
         .ones()
         .filter(|v| matches_structure(node, graph, used, *v))
         .for_each(|v| vertices.push(v));
-    clear_bits(candidates, connections);
     vertices
 }
 
@@ -143,10 +147,11 @@ fn build_candidates_conditionally(
         candidates.insert_range(label_min..);
     } else {
         used.iter().for_each(|v| {
-            graph.undir_neighbors(*v).ones()
-                .filter(|n| *n >= label_min)
+            graph.fast_neighbors(*v)
+                .iter()
+                .filter(|n| **n >= label_min)
                 .for_each(|n| {
-                    connections.insert(n);
+                    connections.insert(*n);
                 })
         });
         candidates.union_with(connections);
