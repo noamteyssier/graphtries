@@ -93,9 +93,10 @@ impl Gtrie {
     pub fn census(&mut self, graph: &Bitgraph) {
         let mut used = Vec::with_capacity(self.max_depth);
         let mut candidates = Candidates::new(graph.n_nodes());
+        let mut blacklist = FixedBitSet::with_capacity(graph.n_nodes());
 
         for c in self.root.iter_children_mut() {
-            match_child_conditionally(c, &mut used, &mut candidates, graph)
+            match_child_conditionally(c, &mut used, &mut candidates, &mut blacklist, graph)
         }
     }
 }
