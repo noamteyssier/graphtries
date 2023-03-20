@@ -25,11 +25,12 @@ impl Candidates {
     }
 
     pub fn insert(&mut self, idx: usize) {
-        if !self.blacklist.contains(idx) {
-            self.candidates[self.n] = idx;
-            self.blacklist.insert(idx);
-            self.n += 1;
+        if self.blacklist.contains(idx) {
+            return;
         }
+        self.candidates[self.n] = idx;
+        self.blacklist.insert(idx);
+        self.n += 1;
     }
 
     pub fn fill(&mut self) {
@@ -133,30 +134,40 @@ fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usiz
  * The condition is that the node must be a graph.
 */
 
+/// I think the slowdown is coming from the fact that 
+/// the candidates / vertices are being iterated
+/// over multiple times. Instead, we should be able
+/// to do it all in one go.
+
 pub fn match_child_conditionally(
     node: &mut GtrieNode,
     used: &mut Vec<usize>,
     candidates: &mut Candidates,
+    blacklist: &mut FixedBitSet,
     graph: &Bitgraph,
 ) {
-    // println!("--------------------------");
-    // println!("Entering match: {}", node);
-    // println!("Used    : {:?}", used);
-    let vertices = matching_vertices_conditionally(node, &used, graph, candidates);
-    // println!("Vertices: {:?}", vertices);
+    println!("--------------------------");
+    println!("Entering match: {}", node);
+    println!("Used    : {:?}", used);
+    let vertices = matching_vertices_conditionally(node, &used, graph, candidates, blacklist);
+    println!("Vertices: {:?}", vertices);
     for v in vertices {
+        println!("  Checking vertex: {}", v);
         used.push(v);
+        blacklist.insert(v);
         if node.is_graph() {
-            // println!("Found graph!");
+            println!("Found graph!");
             node.increment_frequency();
         } else {
             for c in node.iter_children_mut() {
-                match_child_conditionally(c, used, candidates, graph);
+                match_child_conditionally(c, used, candidates, blacklist, graph);
             }
         }
         used.pop();
+        blacklist.set(v, false);
     }
-    // println!("Leaving match: {}", node);
+    println!("Leaving match: {}", node);
+    println!("--------------------------");
 }
 
 pub fn matching_vertices_conditionally(
@@ -164,10 +175,10 @@ pub fn matching_vertices_conditionally(
     used: &[usize],
     graph: &Bitgraph,
     candidates: &mut Candidates,
+    blacklist: &mut FixedBitSet,
 ) -> Vec<usize> {
-    build_candidates_conditionally(graph, used, candidates, node.conditions());
+    build_candidates_conditionally(graph, used, candidates, blacklist, node.conditions());
     let vertices = build_vertices(node, used, graph, candidates);
-    // clear_bits(candidates, connections);
     vertices
 }
 
@@ -186,9 +197,11 @@ fn build_candidates_conditionally(
     graph: &Bitgraph,
     used: &[usize],
     candidates: &mut Candidates,
+    blacklist: &mut FixedBitSet,
     conditions: Option<&Conditions>,
 ) {
     if !used_respects_conditions(used, conditions) {
+        println!(">> Used does not respect conditions");
         return;
     }
     let label_min = minimal_possible_index(used, conditions);
@@ -198,7 +211,7 @@ fn build_candidates_conditionally(
         used.iter().for_each(|v| {
             graph.fast_neighbors(*v)
                 .iter()
-                .filter(|n| **n >= label_min)
+                .filter(|n| **n >= label_min && !blacklist.contains(**n))
                 .for_each(|n| {
                     candidates.insert(*n);
                 })
