@@ -17,9 +17,9 @@ impl Bitgraph {
             let (src, dst) = graph.edge_endpoints(edge).unwrap();
             adj.insert(src.index() * n + dst.index());
         }
-        
+
         for u in 0..n {
-            for v in u+1..n {
+            for v in u + 1..n {
                 if adj.contains(u * n + v) || adj.contains(v * n + u) {
                     neighbors[u].push(v);
                     neighbors[v].push(u);

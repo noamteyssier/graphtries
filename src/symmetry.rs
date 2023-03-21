@@ -16,10 +16,7 @@ impl Display for Condition {
 impl Condition {
     pub fn new(u: usize, v: usize) -> Self {
         assert!(u < v);
-        Condition {
-            u,
-            v,
-        }
+        Condition { u, v }
     }
 
     /// Returns true if the condition is respected by the given graph
@@ -31,7 +28,7 @@ impl Condition {
     /// * `v` - The second vertex
     pub fn is_respected(&self, d1: usize, d2: usize, u: usize, v: usize) -> bool {
         if d1 == self.u && d2 == self.v {
-            return u < v
+            return u < v;
         }
         true
     }
@@ -48,7 +45,7 @@ impl Condition {
 // pub type Conditions = Vec<Condition>;
 #[derive(Clone, Debug)]
 pub struct Conditions {
-    conditions: Vec<Condition>
+    conditions: Vec<Condition>,
 }
 impl Display for Conditions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -66,12 +63,10 @@ impl Display for Conditions {
 }
 impl Conditions {
     pub fn from_vec(conditions: Vec<Condition>) -> Self {
-        Conditions {
-            conditions
-        }
+        Conditions { conditions }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&Condition> {
+    pub fn iter(&self) -> impl Iterator<Item = &Condition> {
         self.conditions.iter()
     }
 
@@ -122,7 +117,7 @@ mod testing {
     fn condition_a() {
         let c1 = Condition::new(0, 1);
         let conditions = Conditions::from_vec(vec![c1]);
-        
+
         let test_set = vec![
             (0, 1, 10, 20, true),  // should pass
             (0, 1, 20, 10, false), // automorphism, should fail
@@ -139,12 +134,12 @@ mod testing {
         let c1 = Condition::new(0, 1);
         let c2 = Condition::new(1, 2);
         let conditions = Conditions::from_vec(vec![c1, c2]);
-        
+
         let test_set = vec![
-            (0, 1, 10, 20, true),   // fixed-orbit, should pass
-            (0, 1, 20, 10, false),  // automorphism, should fail
-            (1, 2, 30, 40, true),   // fixed-orbit, should pass
-            (1, 2, 40, 30, false),  // automorphism, should pass
+            (0, 1, 10, 20, true),  // fixed-orbit, should pass
+            (0, 1, 20, 10, false), // automorphism, should fail
+            (1, 2, 30, 40, true),  // fixed-orbit, should pass
+            (1, 2, 40, 30, false), // automorphism, should pass
         ];
         for (d1, d2, u, v, expected) in test_set {
             assert_eq!(conditions.respects_all(d1, d2, u, v), expected);
@@ -156,24 +151,20 @@ mod testing {
         let c1 = Condition::new(0, 1);
         let c2 = Condition::new(2, 3);
         let conditions = Conditions::from_vec(vec![c1, c2]);
-        
+
         let test_set = vec![
-            (0, 1, 10, 20, true),   // fixed-orbit, should pass
-            (0, 1, 20, 10, false),  // automorphism, should fail
-            (1, 2, 30, 40, true),   // irrelevant, should pass
-            (1, 2, 40, 30, true),   // irrelevant, should pass
-            (2, 3, 50, 60, true),   // fixed-orbit, should pass
-            (2, 3, 60, 50, false),  // automorphism, should fail
-            (3, 4, 70, 80, true),   // irrelevant, should pass
-            (3, 4, 80, 70, true),   // irrelevant, should pass
+            (0, 1, 10, 20, true),  // fixed-orbit, should pass
+            (0, 1, 20, 10, false), // automorphism, should fail
+            (1, 2, 30, 40, true),  // irrelevant, should pass
+            (1, 2, 40, 30, true),  // irrelevant, should pass
+            (2, 3, 50, 60, true),  // fixed-orbit, should pass
+            (2, 3, 60, 50, false), // automorphism, should fail
+            (3, 4, 70, 80, true),  // irrelevant, should pass
+            (3, 4, 80, 70, true),  // irrelevant, should pass
         ];
         for (d1, d2, u, v, expected) in test_set {
             println!("{}<{}: {}<{}: {}", d1, d2, u, v, expected);
             assert_eq!(conditions.respects_all(d1, d2, u, v), expected);
         }
     }
-
-
-
 }
-

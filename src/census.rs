@@ -1,5 +1,5 @@
-use fixedbitset::FixedBitSet;
 use crate::{bitgraph::Bitgraph, node::GtrieNode, symmetry::Conditions};
+use fixedbitset::FixedBitSet;
 
 pub struct Candidates {
     /// Mutable list reflecting the current set of candidates.
@@ -100,7 +100,12 @@ pub fn matching_vertices_conditionally(
     vertices
 }
 
-fn build_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates: &mut Candidates) -> Vec<usize> {
+fn build_vertices(
+    node: &GtrieNode,
+    used: &[usize],
+    graph: &Bitgraph,
+    candidates: &mut Candidates,
+) -> Vec<usize> {
     let mut vertices = Vec::new();
     while let Some(v) = candidates.pop() {
         if matches_structure(node, graph, used, v) {
@@ -122,23 +127,19 @@ fn build_candidates_conditionally(
     if used.len() == 0 {
         candidates.fill();
     } else {
-
         let min_v = identify_minimal_connection(node, graph, used);
 
         // Select all vertices that have a connection to the vertex with the
         // least number of neighbors which are not already in the used list.
-        graph.neighbors(min_v)
+        graph
+            .neighbors(min_v)
             .iter()
-            .filter(|n| {
-                **n >= label_min 
-                    && !blacklist.contains(**n)
-            })
+            .filter(|n| **n >= label_min && !blacklist.contains(**n))
             .for_each(|n| {
                 candidates.insert(*n);
             });
     }
 }
-
 
 /// Checks if all orbit-fixing conditions of the GtrieNode are respected by the used vertices.
 fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> bool {
@@ -146,7 +147,7 @@ fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> 
         for i in 0..used.len() {
             for j in i + 1..used.len() {
                 if !conditions.respects_any(i, j, used[i], used[j]) {
-                    return false
+                    return false;
                 }
             }
         }
@@ -154,7 +155,7 @@ fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> 
     true
 }
 
-/// Identify the minimal possible index for the next vertex in the GtrieNode based on the 
+/// Identify the minimal possible index for the next vertex in the GtrieNode based on the
 /// conditions of that GtrieNode.
 fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> usize {
     if let Some(conditions) = conditions {
@@ -162,9 +163,7 @@ fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> us
         conditions
             .iter()
             .filter(|c| c.max() == k)
-            .fold(0, |acc, c| {
-                acc.max(used[c.min()] + 1)
-            })
+            .fold(0, |acc, c| acc.max(used[c.min()] + 1))
     } else {
         0
     }
@@ -173,7 +172,8 @@ fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> us
 /// Identify the internal vertex with the least number of connections
 /// that is expected to have a connection to the next vertex in the GtrieNode.
 fn identify_minimal_connection(node: &GtrieNode, graph: &Bitgraph, used: &[usize]) -> usize {
-    let (min_v, _min_n) = node.active_nodes()
+    let (min_v, _min_n) = node
+        .active_nodes()
         .map(|i| used[*i])
         .map(|v| (v, graph.neighbors(v).len()))
         .fold((usize::MAX, usize::MAX), |(min_v, min_n), (v, n)| {
@@ -195,13 +195,11 @@ fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usiz
     })
 }
 
-
 #[cfg(test)]
 mod testing {
 
     use super::*;
     use crate::symmetry::Condition;
-
 
     #[test]
     fn conditions_used_positive_a() {

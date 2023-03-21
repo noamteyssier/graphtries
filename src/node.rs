@@ -155,7 +155,7 @@ impl GtrieNode {
         for u in 0..k {
             let fwd_conn = graph.is_connected(u, k - 1);
             let bwd_conn = graph.is_connected(k - 1, u);
-            
+
             if fwd_conn || bwd_conn {
                 self.connections.push(u);
             }

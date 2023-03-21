@@ -1,7 +1,6 @@
-use fixedbitset::FixedBitSet;
 use crate::symmetry::{Condition, Conditions};
+use fixedbitset::FixedBitSet;
 use itertools::Itertools;
-
 
 /// A struct that holds the adjacency matrix and orbits of a graph
 pub struct CanonicalBasedNauty {
