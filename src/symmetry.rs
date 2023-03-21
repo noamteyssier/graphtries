@@ -1,9 +1,10 @@
 use std::fmt::Display;
+use serde::{Serialize, Deserialize};
 
 /// A struct to represent the orbit-fixing conditions of a graph
 /// Both are vertex indices with the expectation that the first
 /// is the smaller index (i.e. smaller depth).
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Condition {
     pub u: usize,
     pub v: usize,
@@ -43,7 +44,7 @@ impl Condition {
 }
 
 // pub type Conditions = Vec<Condition>;
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Conditions {
     conditions: Vec<Condition>,
 }

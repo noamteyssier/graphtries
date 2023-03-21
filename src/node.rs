@@ -1,12 +1,12 @@
+use fixedbitset::FixedBitSet;
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-
 use crate::{
     bitgraph::Bitgraph,
     symmetry::{Condition, Conditions},
 };
-use fixedbitset::FixedBitSet;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct GtrieNode {
     children: Vec<GtrieNode>,

@@ -1,4 +1,8 @@
+use std::io::Write;
+
+use anyhow::Result;
 use fixedbitset::FixedBitSet;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     bitgraph::Bitgraph,
@@ -7,7 +11,7 @@ use crate::{
     symmetry::Conditions,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Gtrie {
     root: GtrieNode,
@@ -19,6 +23,13 @@ impl Gtrie {
             root: GtrieNode::new(0),
             max_depth,
         }
+    }
+
+    pub fn read_from_file(path: &str) -> Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let reader = std::io::BufReader::new(file);
+        let gtrie = serde_json::from_reader(reader)?;
+        Ok(gtrie)
     }
 
     pub fn insert(&mut self, graph: &Bitgraph, conditions: Option<&Conditions>) {
@@ -93,6 +104,21 @@ impl Gtrie {
     #[allow(dead_code)]
     pub fn pprint(&self) {
         self.root.pprint();
+    }
+
+    pub fn write_to_file(&self, path: &str) -> Result<()> {
+        let mut file = std::fs::File::create(path)?;
+        self.write_to_buffer(&mut file)?;
+        Ok(())
+    }
+
+    pub fn write_to_stdout(&self) -> Result<()> {
+        self.write_to_buffer(&mut std::io::stdout())
+    }
+
+    pub fn write_to_buffer<W: Write>(&self, writer: &mut W) -> Result<()> {
+        serde_json::to_writer(writer, self)?;
+        Ok(())
     }
 
     pub fn census(&mut self, graph: &Bitgraph) {
