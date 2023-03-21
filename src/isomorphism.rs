@@ -173,14 +173,7 @@ fn select_minimum_vertex(
 
         // In the case of ties
         } else if degree[u] == degree[min_u as usize] {
-            // Tie breaker 1: last_degree
-            if last_degree[u] < last_degree[min_u as usize] {
-                // println!("COND2");
-                min_u = u as i32;
-
-            // Tie breaker 2: global_degree
-            } else if last_degree[u] == last_degree[min_u as usize] && global_degree[u] < global_degree[min_u as usize] {
-                // println!("COND3, {} < {}", global_degree[u], global_degree[min_u as usize]);
+            if smaller_last_degree(last_degree, u, min_u as usize) || smaller_global_degree(global_degree, last_degree, u, min_u as usize) {
                 min_u = u as i32;
             }
         }
@@ -188,6 +181,16 @@ fn select_minimum_vertex(
 
     assert!(min_u >= 0);
     min_u as usize
+}
+
+/// First tie breaker; smaller last degree
+fn smaller_last_degree(last_degree: &[usize], u: usize, min_u: usize) -> bool {
+    last_degree[u] < last_degree[min_u]
+}
+
+/// Second tie breaker; smaller global degree
+fn smaller_global_degree(last_degree: &[usize], global_degree: &[usize], u: usize, min_u: usize) -> bool {
+    last_degree[u] == last_degree[min_u] && global_degree[u] < global_degree[min_u]
 }
 
 /// Deincrements the degree of all vertices adjacent to u
