@@ -59,6 +59,7 @@ impl Bitgraph {
         &self.neighbors[u]
     }
 
+    #[allow(dead_code)]
     pub fn pprint(&self) {
         for u in 0..self.n {
             for v in 0..self.n {
