@@ -55,89 +55,11 @@ impl Candidates {
     }
 }
 
-// pub fn match_child(
-//     node: &mut GtrieNode,
-//     used: &mut Vec<usize>,
-//     candidates: &mut Candidates,
-//     connections: &mut Connections,
-//     graph: &Bitgraph,
-// ) {
-//     let vertices = matching_vertices(node, &used, graph, candidates, connections);
-//     for v in vertices {
-//         used.push(v);
-//         if node.is_graph() {
-//             node.increment_frequency();
-//         } else {
-//             for c in node.iter_children_mut() {
-//                 match_child(c, used, candidates, connections, graph);
-//             }
-//         }
-//         used.pop();
-//     }
-// }
-
-
-// fn matching_vertices(
-//     node: &GtrieNode,
-//     used: &[usize],
-//     graph: &Bitgraph,
-//     candidates: &mut Candidates,
-//     connections: &mut Connections,
-// ) -> Vec<usize> {
-//     build_candidates(graph, used, candidates, connections);
-//     let mut vertices = Vec::new();
-//     candidates
-//         .ones()
-//         .filter(|v| matches_structure(node, graph, used, *v))
-//         .for_each(|v| vertices.push(v));
-//     clear_bits(candidates, connections);
-//     vertices
-// }
-
-// fn build_candidates(
-//     graph: &Bitgraph,
-//     used: &[usize],
-//     candidates: &mut Candidates,
-//     connections: &mut Connections,
-// ) {
-//     if used.len() == 0 {
-//         candidates.insert_range(..);
-//     } else {
-//         let mut v_min = usize::MAX;
-//         for v in used {
-//             for n in graph.undir_neighbors(*v).ones() {
-//                 if used.contains(&n) {
-//                     continue;
-//                 }
-//                 connections.insert(n);
-//                 let nn = graph.n_undir_neighbors(n);
-//                 if nn < v_min {
-//                     v_min = nn;
-//                 }
-//             }
-//         }
-//         candidates.union_with(connections);
-//     }
-// }
-
-fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
-    used.iter().enumerate().all(|(i, u)| {
-        *u != v
-            && node.out_contains(i) == graph.is_connected(*u, v)
-            && node.in_contains(i) == graph.is_connected(v, *u)
-    })
-}
-
 /*
  * Conditionally match a child node.
  * This is used for the census of the graph space.
  * The condition is that the node must be a graph.
 */
-
-/// I think the slowdown is coming from the fact that 
-/// the candidates / vertices are being iterated
-/// over multiple times. Instead, we should be able
-/// to do it all in one go.
 
 pub fn match_child_conditionally(
     node: &mut GtrieNode,
@@ -146,17 +68,15 @@ pub fn match_child_conditionally(
     blacklist: &mut FixedBitSet,
     graph: &Bitgraph,
 ) {
-    println!("--------------------------");
-    println!("Entering match: {}", node);
-    println!("Used    : {:?}", used);
+    if !used_respects_conditions(used, node.conditions()) {
+        return;
+    }
+
     let vertices = matching_vertices_conditionally(node, &used, graph, candidates, blacklist);
-    println!("Vertices: {:?}", vertices);
     for v in vertices {
-        println!("  Checking vertex: {}", v);
         used.push(v);
         blacklist.insert(v);
         if node.is_graph() {
-            println!("Found graph!");
             node.increment_frequency();
         } else {
             for c in node.iter_children_mut() {
@@ -166,8 +86,6 @@ pub fn match_child_conditionally(
         used.pop();
         blacklist.set(v, false);
     }
-    println!("Leaving match: {}", node);
-    println!("--------------------------");
 }
 
 pub fn matching_vertices_conditionally(
@@ -177,7 +95,7 @@ pub fn matching_vertices_conditionally(
     candidates: &mut Candidates,
     blacklist: &mut FixedBitSet,
 ) -> Vec<usize> {
-    build_candidates_conditionally(graph, used, candidates, blacklist, node.conditions());
+    build_candidates_conditionally(node, graph, used, candidates, blacklist);
     let vertices = build_vertices(node, used, graph, candidates);
     vertices
 }
@@ -194,31 +112,35 @@ fn build_vertices(node: &GtrieNode, used: &[usize], graph: &Bitgraph, candidates
 }
 
 fn build_candidates_conditionally(
+    node: &GtrieNode,
     graph: &Bitgraph,
     used: &[usize],
     candidates: &mut Candidates,
     blacklist: &mut FixedBitSet,
-    conditions: Option<&Conditions>,
 ) {
-    if !used_respects_conditions(used, conditions) {
-        println!(">> Used does not respect conditions");
-        return;
-    }
-    let label_min = minimal_possible_index(used, conditions);
+    let label_min = minimal_possible_index(used, node.conditions());
     if used.len() == 0 {
         candidates.fill();
     } else {
-        used.iter().for_each(|v| {
-            graph.fast_neighbors(*v)
-                .iter()
-                .filter(|n| **n >= label_min && !blacklist.contains(**n))
-                .for_each(|n| {
-                    candidates.insert(*n);
-                })
-        });
+
+        let min_v = identify_minimal_connection(node, graph, used);
+
+        // Select all vertices that have a connection to the vertex with the
+        // least number of neighbors which are not already in the used list.
+        graph.fast_neighbors(min_v)
+            .iter()
+            .filter(|n| {
+                **n >= label_min 
+                    && !blacklist.contains(**n)
+            })
+            .for_each(|n| {
+                candidates.insert(*n);
+            });
     }
 }
 
+
+/// Checks if all orbit-fixing conditions of the GtrieNode are respected by the used vertices.
 fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> bool {
     if let Some(conditions) = conditions {
         for i in 0..used.len() {
@@ -232,6 +154,8 @@ fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> 
     true
 }
 
+/// Identify the minimal possible index for the next vertex in the GtrieNode based on the 
+/// conditions of that GtrieNode.
 fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> usize {
     if let Some(conditions) = conditions {
         let k = used.len();
@@ -246,10 +170,31 @@ fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> us
     }
 }
 
-// fn clear_bits(candidates: &mut Candidates, connections: &mut Connections) {
-//     candidates.clear();
-//     connections.clear();
-// }
+/// Identify the internal vertex with the least number of connections
+/// that is expected to have a connection to the next vertex in the GtrieNode.
+fn identify_minimal_connection(node: &GtrieNode, graph: &Bitgraph, used: &[usize]) -> usize {
+    let (min_v, _min_n) = node.active_nodes()
+        .map(|i| used[*i])
+        .map(|v| (v, graph.fast_neighbors(v).len()))
+        .fold((usize::MAX, usize::MAX), |(min_v, min_n), (v, n)| {
+            if n < min_n {
+                (v, n)
+            } else {
+                (min_v, min_n)
+            }
+        });
+    min_v
+}
+
+/// Check if the vertex v matches the structure of the GtrieNode.
+fn matches_structure(node: &GtrieNode, graph: &Bitgraph, used: &[usize], v: usize) -> bool {
+    used.iter().enumerate().all(|(i, u)| {
+        *u != v
+            && node.out_contains(i) == graph.is_connected(*u, v)
+            && node.in_contains(i) == graph.is_connected(v, *u)
+    })
+}
+
 
 #[cfg(test)]
 mod testing {
