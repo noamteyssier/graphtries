@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use fixedbitset::FixedBitSet;
-
 /// A struct to represent the orbit-fixing conditions of a graph
 /// Both are vertex indices with the expectation that the first
 /// is the smaller index (i.e. smaller depth).
