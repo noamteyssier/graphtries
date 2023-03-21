@@ -20,6 +20,7 @@ pub struct GtrieNode {
     total_out: usize,
     total_edges: usize,
     frequency: usize,
+    connections: Vec<usize>,
     conditions: Option<Conditions>,
 }
 impl Display for GtrieNode {
@@ -73,6 +74,7 @@ impl GtrieNode {
             total_edges: 0,
             frequency: 0,
             conditions: None,
+            connections: Vec::with_capacity(depth),
             depth,
         }
     }
@@ -99,6 +101,7 @@ impl GtrieNode {
             total_edges: 0,
             frequency: 0,
             conditions: Some(possible_conditions),
+            connections: Vec::with_capacity(depth),
             depth,
         }
     }
@@ -135,6 +138,7 @@ impl GtrieNode {
             total_edges,
             frequency: 0,
             conditions: None,
+            connections: Vec::with_capacity(n_nodes),
             depth: graph.n_nodes(),
         }
     }
@@ -149,12 +153,20 @@ impl GtrieNode {
 
     pub fn update_adjacency(&mut self, graph: &Bitgraph, k: usize) {
         for u in 0..k {
-            if graph.is_connected(u, k - 1) {
+            let fwd_conn = graph.is_connected(u, k - 1);
+            let bwd_conn = graph.is_connected(k - 1, u);
+            
+            if fwd_conn || bwd_conn {
+                self.connections.push(u);
+            }
+
+            if fwd_conn {
                 self.edge_out.insert(u);
                 self.total_out += 1;
                 self.total_edges += 1;
             }
-            if graph.is_connected(k - 1, u) {
+
+            if bwd_conn {
                 self.edge_in.insert(u);
                 self.total_in += 1;
                 self.total_edges += 1;
@@ -206,6 +218,10 @@ impl GtrieNode {
 
     pub fn conditions(&self) -> Option<&Conditions> {
         self.conditions.as_ref()
+    }
+
+    pub fn active_nodes(&self) -> impl Iterator<Item = &usize> {
+        self.connections.iter()
     }
 
     #[allow(dead_code)]
