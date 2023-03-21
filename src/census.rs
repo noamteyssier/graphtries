@@ -127,7 +127,7 @@ fn build_candidates_conditionally(
 
         // Select all vertices that have a connection to the vertex with the
         // least number of neighbors which are not already in the used list.
-        graph.fast_neighbors(min_v)
+        graph.neighbors(min_v)
             .iter()
             .filter(|n| {
                 **n >= label_min 
@@ -175,7 +175,7 @@ fn minimal_possible_index(used: &[usize], conditions: Option<&Conditions>) -> us
 fn identify_minimal_connection(node: &GtrieNode, graph: &Bitgraph, used: &[usize]) -> usize {
     let (min_v, _min_n) = node.active_nodes()
         .map(|i| used[*i])
-        .map(|v| (v, graph.fast_neighbors(v).len()))
+        .map(|v| (v, graph.neighbors(v).len()))
         .fold((usize::MAX, usize::MAX), |(min_v, min_n), (v, n)| {
             if n < min_n {
                 (v, n)
