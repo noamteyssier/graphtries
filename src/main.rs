@@ -8,8 +8,8 @@ mod node;
 mod symmetry;
 
 use anyhow::Result;
-use clap::Parser;
 use bitgraph::Bitgraph;
+use clap::Parser;
 use cli::{Cli, Mode};
 use graph_canon::CanonLabeling;
 use gtrie::Gtrie;
@@ -36,7 +36,7 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
     let graph = io::load_numeric_graph(&input, true)?;
     let query = Bitgraph::from_graph(&graph);
     let mut gtrie = Gtrie::read_from_file(&gtrie)?;
-    
+
     let now = std::time::Instant::now();
     gtrie.census(&query);
     println!("Elapsed: {} ms", now.elapsed().as_millis());
@@ -47,17 +47,19 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-
     let cli = Cli::parse();
     match cli.mode {
-
         Mode::Enumerate { gtrie, input } => {
             enumerate_subgraphs(gtrie, input)?;
-        },
+        }
 
-        Mode::Build { input, output, size } => {
+        Mode::Build {
+            input,
+            output,
+            size,
+        } => {
             build_gtrie(input, output, size)?;
-        },
+        }
     }
 
     Ok(())

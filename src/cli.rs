@@ -8,7 +8,6 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Mode {
-
     /// Enumerate all subgraphs of a given size given a graph and a gtrie.
     Enumerate {
         #[arg(short, long)]
@@ -29,5 +28,4 @@ pub enum Mode {
         #[arg(short, long)]
         size: usize,
     },
-
 }

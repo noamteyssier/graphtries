@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use serde::{Serialize, Deserialize};
 
 /// A struct to represent the orbit-fixing conditions of a graph
 /// Both are vertex indices with the expectation that the first

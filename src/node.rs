@@ -1,10 +1,10 @@
-use fixedbitset::FixedBitSet;
-use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 use crate::{
     bitgraph::Bitgraph,
     symmetry::{Condition, Conditions},
 };
+use fixedbitset::FixedBitSet;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
