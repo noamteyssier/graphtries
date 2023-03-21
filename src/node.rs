@@ -26,32 +26,32 @@ pub struct GtrieNode {
 impl Display for GtrieNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
-        s.push_str("[");
+        s.push('[');
         for u in 0..self.n_nodes {
             if self.edge_out.contains(u) {
-                s.push_str("1");
+                s.push('1');
             } else {
-                s.push_str("0");
+                s.push('0');
             }
         }
         s.push_str("][");
         for v in 0..self.n_nodes {
             if self.edge_in.contains(v) {
-                s.push_str("1");
+                s.push('1');
             } else {
-                s.push_str("0");
+                s.push('0');
             }
         }
-        s.push_str("]");
+        s.push(']');
         if let Some(conditions) = &self.conditions {
             s.push_str(" |");
             for (idx, c) in conditions.iter().enumerate() {
                 if idx > 0 {
-                    s.push_str(" ");
+                    s.push(' ');
                 }
                 s.push_str(&format!("{}", c));
             }
-            s.push_str("|");
+            s.push('|');
         }
 
         if self.is_graph {

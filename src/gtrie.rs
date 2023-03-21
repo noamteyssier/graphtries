@@ -45,7 +45,6 @@ impl Gtrie {
     fn insert_recursively(graph: &Bitgraph, node: &mut GtrieNode, k: usize) {
         if k == graph.n_nodes() {
             node.set_graph(true);
-            return;
         } else {
             for c in node.iter_children_mut() {
                 if Self::depth_eq(c, graph, k) {
@@ -68,7 +67,6 @@ impl Gtrie {
     ) {
         if k == graph.n_nodes() {
             node.set_graph(true);
-            return;
         } else {
             for c in node.iter_children_mut() {
                 if Self::depth_eq(c, graph, k) {

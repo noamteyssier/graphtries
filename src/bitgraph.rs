@@ -83,8 +83,8 @@ mod testing {
 
     fn build_graph() -> Graph<(), (), Directed> {
         let edges = vec![(1, 0), (2, 0)];
-        let graph = Graph::from_edges(&edges);
-        graph
+        
+        Graph::from_edges(&edges)
     }
 
     #[test]

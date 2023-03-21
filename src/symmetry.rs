@@ -51,14 +51,14 @@ pub struct Conditions {
 impl Display for Conditions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
-        s.push_str("|");
+        s.push('|');
         for (idx, c) in self.conditions.iter().enumerate() {
             if idx > 0 {
-                s.push_str(" ");
+                s.push(' ');
             }
             s.push_str(&format!("{}", c));
         }
-        s.push_str("|");
+        s.push('|');
         write!(f, "{}", s)
     }
 }

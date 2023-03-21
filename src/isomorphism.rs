@@ -115,7 +115,7 @@ pub fn canonical_based_nauty(
     relabel_adj(adj, &mut new_adj, size, &labels);
 
     // write the new orbits
-    relabel_orbits(&orbits, &mut new_orbits, &labels);
+    relabel_orbits(orbits, &mut new_orbits, &labels);
 
     // identify symmetry breaking conditions
     let conditions = symmetry_breaking_conditions(&new_orbits);
@@ -136,7 +136,7 @@ fn calculate_relabels(
     for pos in (0..size).rev() {
         // Find articulation points
         let ap = if pos > 2 {
-            find_articulation_points(adj, size, &used)
+            find_articulation_points(adj, size, used)
         } else {
             vec![0; size]
         };
@@ -179,11 +179,9 @@ fn select_minimum_vertex(
                 min_u = u as i32;
 
             // Tie breaker 2: global_degree
-            } else if last_degree[u] == last_degree[min_u as usize] {
-                if global_degree[u] < global_degree[min_u as usize] {
-                    // println!("COND3, {} < {}", global_degree[u], global_degree[min_u as usize]);
-                    min_u = u as i32;
-                }
+            } else if last_degree[u] == last_degree[min_u as usize] && global_degree[u] < global_degree[min_u as usize] {
+                // println!("COND3, {} < {}", global_degree[u], global_degree[min_u as usize]);
+                min_u = u as i32;
             }
         }
     }
@@ -253,7 +251,7 @@ fn relabel_orbits(orbits: &[i32], new_orbits: &mut Vec<usize>, labels: &[usize])
 fn symmetry_breaking_conditions(orbits: &[usize]) -> Option<Conditions> {
     let unique_orbits = orbits.iter().unique().collect::<Vec<_>>();
     if unique_orbits.is_empty() {
-        return None;
+        None
     } else {
         let mut conditions = Vec::new();
         for o in unique_orbits {

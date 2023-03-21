@@ -72,7 +72,7 @@ pub fn match_child_conditionally(
         return;
     }
 
-    let vertices = matching_vertices_conditionally(node, &used, graph, candidates, blacklist);
+    let vertices = matching_vertices_conditionally(node, used, graph, candidates, blacklist);
     for v in vertices {
         used.push(v);
         blacklist.insert(v);
@@ -96,8 +96,8 @@ pub fn matching_vertices_conditionally(
     blacklist: &mut FixedBitSet,
 ) -> Vec<usize> {
     build_candidates_conditionally(node, graph, used, candidates, blacklist);
-    let vertices = build_vertices(node, used, graph, candidates);
-    vertices
+    
+    build_vertices(node, used, graph, candidates)
 }
 
 fn build_vertices(
@@ -124,7 +124,7 @@ fn build_candidates_conditionally(
     blacklist: &mut FixedBitSet,
 ) {
     let label_min = minimal_possible_index(used, node.conditions());
-    if used.len() == 0 {
+    if used.is_empty() {
         candidates.fill();
     } else {
         let min_v = identify_minimal_connection(node, graph, used);

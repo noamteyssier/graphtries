@@ -22,7 +22,7 @@ fn build_gtrie(input: String, output: Option<String>, size: usize) -> Result<()>
         let canon = CanonLabeling::new(&graph);
         let canon_graph: Graph<(), (), Directed> = Graph::from(&canon);
         let mut bgraph = Bitgraph::from_graph(&canon_graph);
-        let canon_based_nauty = canonical_based_nauty(&bgraph.adjacency(), size, canon.orbits());
+        let canon_based_nauty = canonical_based_nauty(bgraph.adjacency(), size, canon.orbits());
         bgraph.overwrite_adjacency(canon_based_nauty.adjacency());
         gtrie.insert(&bgraph, canon_based_nauty.conditions());
     });
