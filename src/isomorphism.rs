@@ -380,6 +380,36 @@ mod testing {
         assert_eq!(ap, vec![0, 1, 1, 0]);
     }
 
+    #[test]
+    fn symmetry_breaking_conditions_a() {
+        let orbits = vec![0, 0, 1, 1, 2, 2, 3, 3];
+        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
+        assert_eq!(conditions.len(), 4);
+        assert!(conditions.contains(&super::Condition::new(0, 1)));
+        assert!(conditions.contains(&super::Condition::new(2, 3)));
+        assert!(conditions.contains(&super::Condition::new(4, 5)));
+        assert!(conditions.contains(&super::Condition::new(6, 7)));
+    }
+
+    #[test]
+    fn symmetry_breaking_conditions_b() {
+        let orbits = vec![0, 0, 0];
+        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
+        assert_eq!(conditions.len(), 2);
+        assert!(conditions.contains(&super::Condition::new(0, 1)));
+        assert!(conditions.contains(&super::Condition::new(1, 2)));
+    }
+
+    #[test]
+    fn symmetry_breaking_conditions_c() {
+        let orbits = vec![0, 0, 0, 0];
+        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
+        assert_eq!(conditions.len(), 3);
+        assert!(conditions.contains(&super::Condition::new(0, 1)));
+        assert!(conditions.contains(&super::Condition::new(1, 2)));
+        assert!(conditions.contains(&super::Condition::new(2, 3)));
+    }
+
     // #[test]
     // fn articulation_points_with_used() {
     //     let n = 4;
