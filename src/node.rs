@@ -22,6 +22,7 @@ pub struct GtrieNode {
     frequency: usize,
     connections: Vec<usize>,
     conditions: Option<Conditions>,
+    repr: Option<String>,
 }
 impl Display for GtrieNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,6 +55,10 @@ impl Display for GtrieNode {
             s.push('|');
         }
 
+        if let Some(repr) = self.repr.as_ref() {
+            s.push_str(&format!(" [ {} ]", repr));
+        }
+
         if self.is_graph {
             s.push_str(&format!(" -> {}", self.frequency));
         }
@@ -76,6 +81,7 @@ impl GtrieNode {
             conditions: None,
             connections: Vec::with_capacity(depth),
             depth,
+            repr: None,
         }
     }
 
@@ -103,6 +109,7 @@ impl GtrieNode {
             conditions: Some(possible_conditions),
             connections: Vec::with_capacity(depth),
             depth,
+            repr: None,
         }
     }
 
@@ -140,6 +147,7 @@ impl GtrieNode {
             conditions: None,
             connections: Vec::with_capacity(n_nodes),
             depth: graph.n_nodes(),
+            repr: None,
         }
     }
 
@@ -180,6 +188,10 @@ impl GtrieNode {
 
     pub fn set_graph(&mut self, is_graph: bool) {
         self.is_graph = is_graph;
+    }
+
+    pub fn set_repr(&mut self, repr: Option<String>) {
+        self.repr = repr;
     }
 
     pub fn iter_children_mut(&mut self) -> impl Iterator<Item = &mut Self> {
@@ -224,6 +236,15 @@ impl GtrieNode {
         self.connections.iter()
     }
 
+    pub fn pprint_results(&self) {
+        if let Some(repr) = &self.repr {
+            println!("{}\t{}", repr, self.frequency);
+        }
+        for child in self.iter_children() {
+            child.pprint_results();
+        }
+    }
+
     #[allow(dead_code)]
     pub fn pprint(&self, frequency: bool) {
         print!("{}:", self.depth);
@@ -264,6 +285,12 @@ impl GtrieNode {
                 s.push_str(&format!("{}", c));
             }
             s.push('|');
+        } else {
+            s.push_str(" {}+");
+        }
+
+        if let Some(repr) = self.repr.as_ref() {
+            s.push_str(&format!(" [ {} ]", repr));
         }
 
         if frequency && self.is_graph {

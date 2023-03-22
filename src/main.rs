@@ -24,7 +24,8 @@ fn build_gtrie(input: String, output: Option<String>, size: usize) -> Result<()>
         let mut bgraph = Bitgraph::from_graph(&canon_graph);
         let canon_based_nauty = canonical_based_nauty(bgraph.adjacency(), size, canon.orbits());
         bgraph.overwrite_adjacency(canon_based_nauty.adjacency());
-        gtrie.insert(&bgraph, canon_based_nauty.conditions());
+        let repr = graph6_rs::write_graph6(bgraph.as_bitvec(), bgraph.n_nodes(), bgraph.is_dir());
+        gtrie.insert(&bgraph, canon_based_nauty.conditions(), Some(repr));
     });
     match output {
         Some(path) => gtrie.write_to_file(&path),
@@ -45,9 +46,9 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
 
     let now = std::time::Instant::now();
     gtrie.census(&query);
-    println!("Elapsed: {} ms", now.elapsed().as_millis());
+    eprintln!("Elapsed: {} ms", now.elapsed().as_millis());
 
-    gtrie.pprint(true);
+    gtrie.pprint_results();
 
     Ok(())
 }

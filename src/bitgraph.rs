@@ -59,6 +59,20 @@ impl Bitgraph {
         &self.neighbors[u]
     }
 
+    pub fn as_bitvec(&self) -> Vec<usize> {
+        let mut bitvec = Vec::with_capacity(self.n * self.n);
+        for u in 0..self.n {
+            for v in 0..self.n {
+                if self.is_connected(u, v) {
+                    bitvec.push(1);
+                } else {
+                    bitvec.push(0);
+                }
+            }
+        }
+        bitvec
+    }
+
     #[allow(dead_code)]
     pub fn pprint(&self) {
         for u in 0..self.n {

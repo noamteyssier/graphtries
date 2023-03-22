@@ -32,29 +32,29 @@ impl Gtrie {
         Ok(gtrie)
     }
 
-    pub fn insert(&mut self, graph: &Bitgraph, conditions: Option<&Conditions>) {
+    pub fn insert(&mut self, graph: &Bitgraph, conditions: Option<&Conditions>, repr: Option<String>) {
         assert!(graph.n_nodes() <= self.max_depth);
         if let Some(conditions) = conditions {
-            Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions);
+            Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions, repr);
         } else {
-            Self::insert_recursively(graph, &mut self.root, 0);
+            Self::insert_recursively(graph, &mut self.root, 0, repr);
         }
-        Self::insert_recursively(graph, &mut self.root, 0);
     }
 
-    fn insert_recursively(graph: &Bitgraph, node: &mut GtrieNode, k: usize) {
+    fn insert_recursively(graph: &Bitgraph, node: &mut GtrieNode, k: usize, repr: Option<String>) {
         if k == graph.n_nodes() {
             node.set_graph(true);
+            node.set_repr(repr);
         } else {
             for c in node.iter_children_mut() {
                 if Self::depth_eq(c, graph, k) {
-                    Self::insert_recursively(graph, c, k + 1);
+                    Self::insert_recursively(graph, c, k + 1, repr);
                     return;
                 }
             }
             let mut child = GtrieNode::new(k + 1);
             child.update_adjacency(graph, k + 1);
-            Self::insert_recursively(graph, &mut child, k + 1);
+            Self::insert_recursively(graph, &mut child, k + 1, repr);
             node.insert_child(child);
         }
     }
@@ -64,13 +64,15 @@ impl Gtrie {
         node: &mut GtrieNode,
         k: usize,
         conditions: &Conditions,
+        repr: Option<String>,
     ) {
         if k == graph.n_nodes() {
             node.set_graph(true);
+            node.set_repr(repr);
         } else {
             for c in node.iter_children_mut() {
                 if Self::depth_eq(c, graph, k) {
-                    Self::insert_recursively_conditional(graph, c, k + 1, conditions);
+                    Self::insert_recursively_conditional(graph, c, k + 1, conditions, repr);
                     return;
                 }
             }
@@ -81,7 +83,7 @@ impl Gtrie {
                 GtrieNode::new_conditional(k + 1, conditions)
             };
             child.update_adjacency(graph, k + 1);
-            Self::insert_recursively_conditional(graph, &mut child, k + 1, conditions);
+            Self::insert_recursively_conditional(graph, &mut child, k + 1, conditions, repr);
             node.insert_child(child);
         }
     }
@@ -102,6 +104,10 @@ impl Gtrie {
     #[allow(dead_code)]
     pub fn pprint(&self, frequency: bool) {
         self.root.pprint(frequency);
+    }
+
+    pub fn pprint_results(&self) {
+        self.root.pprint_results();
     }
 
     pub fn write_to_file(&self, path: &str) -> Result<()> {
