@@ -16,7 +16,7 @@ use gtrie::Gtrie;
 use isomorphism::canonical_based_nauty;
 use petgraph::{Directed, Graph};
 
-fn build_gtrie(input: String, output: Option<String>, size: usize) -> Result<()> {
+fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
     let mut gtrie = Gtrie::new(size);
     io::iter_graphs_from_file(&input).for_each(|graph| {
         let aut = AutoGroups::from_petgraph(&graph);
@@ -27,9 +27,20 @@ fn build_gtrie(input: String, output: Option<String>, size: usize) -> Result<()>
         let repr = graph6_rs::write_graph6(bgraph.as_bitvec(), bgraph.n_nodes(), bgraph.is_dir());
         gtrie.insert(&bgraph, canon_based_nauty.conditions(), Some(repr));
     });
+
+    if visualize {
+        gtrie.pprint(false);
+    }
+
     match output {
         Some(path) => gtrie.write_to_file(&path),
-        None => gtrie.write_to_stdout(),
+        None => { 
+            if visualize { 
+                Ok(())
+            } else {
+                gtrie.write_to_stdout()
+            }
+        },
     }
 }
 
@@ -64,8 +75,9 @@ fn main() -> Result<()> {
             input,
             output,
             size,
+            visualize,
         } => {
-            build_gtrie(input, output, size)?;
+            build_gtrie(input, output, size, visualize)?;
         }
 
         Mode::Visualize { input } => {
