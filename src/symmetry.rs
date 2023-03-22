@@ -83,6 +83,11 @@ impl Conditions {
         self.conditions.retain(f)
     }
 
+    #[allow(dead_code)]
+    pub fn len(&self) -> usize {
+        self.conditions.len()
+    }
+
     /// Returns true if the conditions are respected for the given pair of vertices
     ///
     /// # Arguments
@@ -90,7 +95,6 @@ impl Conditions {
     /// * 'd2' - The depth of the second vertex
     /// * 'u' - The first vertex index
     /// * 'v' - The second vertex index
-    #[allow(dead_code)]
     pub fn respects_all(&self, d1: usize, d2: usize, u: usize, v: usize) -> bool {
         assert!(d1 <= d2, "d1 must be less than or equal to d2");
         self.conditions.iter().all(|c| c.is_respected(d1, d2, u, v))
@@ -103,6 +107,7 @@ impl Conditions {
     /// * 'd2' - The depth of the second vertex
     /// * 'u' - The first vertex index
     /// * 'v' - The second vertex index
+    #[allow(dead_code)]
     pub fn respects_any(&self, d1: usize, d2: usize, u: usize, v: usize) -> bool {
         assert!(d1 <= d2, "d1 must be less than or equal to d2");
         self.conditions.iter().any(|c| c.is_respected(d1, d2, u, v))
