@@ -28,4 +28,10 @@ pub enum Mode {
         #[arg(short, long)]
         size: usize,
     },
+
+    /// Visualize a gtrie.
+    Visualize {
+        #[arg(short, long)]
+        input: String,
+    },
 }

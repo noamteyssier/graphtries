@@ -100,8 +100,8 @@ impl Gtrie {
 
     /// A depth first search that prints out all nodes in the trie.
     #[allow(dead_code)]
-    pub fn pprint(&self) {
-        self.root.pprint();
+    pub fn pprint(&self, frequency: bool) {
+        self.root.pprint(frequency);
     }
 
     pub fn write_to_file(&self, path: &str) -> Result<()> {

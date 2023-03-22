@@ -32,6 +32,12 @@ fn build_gtrie(input: String, output: Option<String>, size: usize) -> Result<()>
     }
 }
 
+fn visualize_gtrie(gtrie: String) -> Result<()> {
+    let gtrie = Gtrie::read_from_file(&gtrie)?;
+    gtrie.pprint(false);
+    Ok(())
+}
+
 fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
     let graph = io::load_numeric_graph(&input, true)?;
     let query = Bitgraph::from_graph(&graph);
@@ -41,7 +47,7 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
     gtrie.census(&query);
     println!("Elapsed: {} ms", now.elapsed().as_millis());
 
-    gtrie.pprint();
+    gtrie.pprint(true);
 
     Ok(())
 }
@@ -59,7 +65,11 @@ fn main() -> Result<()> {
             size,
         } => {
             build_gtrie(input, output, size)?;
-        }
+        },
+
+        Mode::Visualize { input } => {
+            visualize_gtrie(input)?;
+        },
     }
 
     Ok(())

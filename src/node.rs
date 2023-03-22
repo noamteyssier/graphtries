@@ -225,14 +225,50 @@ impl GtrieNode {
     }
 
     #[allow(dead_code)]
-    pub fn pprint(&self) {
+    pub fn pprint(&self, frequency: bool) {
         print!("{}:", self.depth);
         for _ in 0..self.depth {
             print!("  ");
         }
-        println!("{}", self);
+        println!("{}", self.custom_display(frequency));
         for child in self.iter_children() {
-            child.pprint();
+            child.pprint(frequency);
         }
+    }
+
+    fn custom_display(&self, frequency: bool) -> String {
+        let mut s = String::new();
+        s.push('[');
+        for u in 0..self.n_nodes {
+            if self.edge_out.contains(u) {
+                s.push('1');
+            } else {
+                s.push('0');
+            }
+        }
+        s.push_str("][");
+        for v in 0..self.n_nodes {
+            if self.edge_in.contains(v) {
+                s.push('1');
+            } else {
+                s.push('0');
+            }
+        }
+        s.push(']');
+        if let Some(conditions) = &self.conditions {
+            s.push_str(" |");
+            for (idx, c) in conditions.iter().enumerate() {
+                if idx > 0 {
+                    s.push(' ');
+                }
+                s.push_str(&format!("{}", c));
+            }
+            s.push('|');
+        }
+
+        if frequency && self.is_graph {
+            s.push_str(&format!(" -> {}", self.frequency));
+        }
+        s
     }
 }
