@@ -140,7 +140,7 @@ fn calculate_relabels(
         let ap = if pos > 2 {
             find_articulation_points(adj, size, used)
         } else {
-            vec![0; size]
+            vec![false; size]
         };
 
         // Select the minimally connected vertex that is not an articulation point
@@ -158,13 +158,13 @@ fn select_minimum_vertex(
     last_degree: &[usize],
     global_degree: &[usize],
     used: &[bool],
-    ap: &[usize],
+    ap: &[bool],
     size: usize,
 ) -> usize {
     let mut min_u = -1;
     for u in 0..size {
         // Skip if used or is an articulation point
-        if used[u] || ap[u] != 0 {
+        if used[u] || ap[u] {
             continue;
         }
 
@@ -293,73 +293,98 @@ fn symmetry_breaking_conditions(aut: &AutoGroups, orbits: &[usize]) -> Option<Co
 }
 
 /// Algorithm: Finding articulation points
-fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, used: &[bool]) -> Vec<usize> {
+fn find_articulation_points(
+    adj_matrix: &FixedBitSet, 
+    n: usize, 
+    blacklist: &[bool]
+) -> Vec<bool> {
     let mut timer = 0;
     let mut visited = vec![false; n];
-    let mut tin = vec![-1; n];
+    let mut timing = vec![-1; n];
     let mut low = vec![-1; n];
-    let mut ap = vec![0; n];
-    for i in 0..n {
-        if !visited[i] && !used[i] {
-            dfs_articulation(
-                i,
-                -1,
-                &mut timer,
-                &mut visited,
-                &mut tin,
-                &mut low,
-                adj_matrix,
-                n,
-                &mut ap,
-                used,
-            );
-        }
-    }
+    let mut ap = vec![false; n];
+    dfs_articulation(
+        adj_matrix,
+        n,
+        0,
+        None,
+        &mut timer,
+        &mut visited,
+        &mut timing,
+        &mut low,
+        &mut ap,
+        blacklist,
+    );
     ap
 }
 
 /// Algorithm: Finding articulation points
 ///
-/// Similar to CPP implementation here: https://cp-algorithms.com/graph/cutpoints.html#algorithm
+/// Adapted from C++ implementation here: 
+/// https://cp-algorithms.com/graph/cutpoints.html#algorithm
 fn dfs_articulation(
-    v: usize,
-    p: i32,
-    timer: &mut i32,
-    visited: &mut Vec<bool>,
-    tin: &mut Vec<i32>,
-    low: &mut Vec<i32>,
-    adj_matrix: &FixedBitSet,
+    adj: &FixedBitSet,
     n: usize,
-    ap: &mut Vec<usize>,
-    used: &[bool],
+    u: usize,
+    parent: Option<usize>,
+    timer: &mut usize,
+    visited: &mut [bool],
+    timing: &mut [i32],
+    low: &mut [i32],
+    ap: &mut [bool],
+    blacklist: &[bool],
 ) {
-    visited[v] = true;
-    tin[v] = *timer;
-    low[v] = *timer;
     *timer += 1;
+    visited[u] = true;
+    timing[u] = *timer as i32;
+    low[u] = *timer as i32;
 
     let mut children = 0;
-    for to in 0..n {
-        if adj_matrix.contains(v * n + to) || adj_matrix.contains(to * n + v) {
-            if to == p as usize {
+
+    // iterate over all nodes
+    for v in 0..n {
+
+        // skip if not a neighbor of the current head
+        if !adj.contains(u*n+v) && !adj.contains(v*n+u) {
+            continue
+        }
+
+        // skip if blacklisted
+        if blacklist[v] {
+            continue
+        }
+
+        // skip if the parent of the current head
+        if let Some(p) = parent {
+            if v == p {
                 continue;
             }
-            if visited[to] {
-                low[v] = std::cmp::min(low[v], tin[to]);
-            } else {
-                dfs_articulation(
-                    to, v as i32, timer, visited, tin, low, adj_matrix, n, ap, used,
-                );
-                low[v] = std::cmp::min(low[v], low[to]);
-                if low[to] >= tin[v] && p != -1 {
-                    ap[v] = 1;
-                }
-                children += 1;
+        }
+
+        if visited[v] {
+            low[u] = low[u].min(timing[v]);
+        } else {
+            dfs_articulation(
+                adj,
+                n,
+                v,
+                Some(u),
+                timer,
+                visited,
+                timing,
+                low,
+                ap,
+                blacklist,
+            );
+            low[u] = low[u].min(low[v]);
+            if low[v] >= timing[u] && parent.is_some() {
+                ap[u] = true;
             }
+            children += 1;
         }
     }
-    if p == -1 && children > 1 {
-        ap[v] = 1;
+    if parent.is_none() && children > 1 {
+        ap[u] = true;
     }
 }
 
@@ -382,7 +407,7 @@ mod testing {
         insert_graph(&mut adj, n, 2, 3);
 
         let ap = super::find_articulation_points(&adj, n, &used);
-        assert_eq!(ap, vec![0, 0, 1, 0]);
+        assert_eq!(ap, vec![false, false, true, false]);
     }
 
     #[test]
@@ -395,33 +420,114 @@ mod testing {
         insert_graph(&mut adj, n, 2, 3);
 
         let ap = super::find_articulation_points(&adj, n, &used);
-        assert_eq!(ap, vec![0, 1, 1, 0]);
+        assert_eq!(ap, vec![false, true, true, false]);
     }
 
-    // #[test]
-    // fn articulation_points_with_used() {
-    //     let n = 4;
-    //     let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
-    //     let used = vec![false, false, true, false];
-    //     insert_graph(&mut adj, n, 0, 2);
-    //     insert_graph(&mut adj, n, 1, 0);
-    //     insert_graph(&mut adj, n, 1, 2);
-    //     insert_graph(&mut adj, n, 2, 3);
-    //
-    //     let ap = super::find_articulation_points(&adj, n, &used);
-    //     assert_eq!(ap, vec![0, 0, 0, 0]);
-    // }
+    #[test]
+    fn articulation_points_no_used_c() {
+        let n = 7;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let used = vec![false; n];
+        insert_graph(&mut adj, n, 0, 1);
+        insert_graph(&mut adj, n, 0, 2);
+        insert_graph(&mut adj, n, 1, 3);
+        insert_graph(&mut adj, n, 2, 3);
+        insert_graph(&mut adj, n, 2, 4);
+        insert_graph(&mut adj, n, 3, 4);
+        insert_graph(&mut adj, n, 4, 5);
+        insert_graph(&mut adj, n, 4, 6);
+        insert_graph(&mut adj, n, 5, 6);
 
-    // #[test]
-    // fn articulation_points_with_used_b() {
-    //     let n = 4;
-    //     let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
-    //     let used = vec![false, false, true, false];
-    //     insert_graph(&mut adj, n, 0, 1);
-    //     insert_graph(&mut adj, n, 1, 2);
-    //     insert_graph(&mut adj, n, 2, 3);
-    //
-    //     let ap = super::find_articulation_points(&adj, n, &used);
-    //     assert_eq!(ap, vec![0, 1, 0, 0]);
-    // }
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, false, false, false, true, false, false]);
+    }
+
+    #[test]
+    fn articulation_points_no_used_d() {
+        let n = 7;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let used = vec![false; n];
+        insert_graph(&mut adj, n, 0, 1);
+        insert_graph(&mut adj, n, 0, 2);
+        insert_graph(&mut adj, n, 1, 3);
+        insert_graph(&mut adj, n, 2, 3);
+        insert_graph(&mut adj, n, 3, 4);
+        insert_graph(&mut adj, n, 3, 5);
+        insert_graph(&mut adj, n, 4, 5);
+        insert_graph(&mut adj, n, 4, 6);
+        insert_graph(&mut adj, n, 5, 6);
+
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, false, false, true, false, false, false]);
+    }
+
+    #[test]
+    fn articulation_points_with_used() {
+        let n = 4;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let used = vec![false, false, true, false];
+        insert_graph(&mut adj, n, 0, 2);
+        insert_graph(&mut adj, n, 1, 0);
+        insert_graph(&mut adj, n, 1, 2);
+        insert_graph(&mut adj, n, 2, 3);
+
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, false, false, false]);
+    }
+
+    #[test]
+    fn articulation_points_with_used_b() {
+        let n = 4;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let used = vec![false, false, true, false];
+        insert_graph(&mut adj, n, 0, 1);
+        insert_graph(&mut adj, n, 1, 2);
+        insert_graph(&mut adj, n, 2, 3);
+
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, false, false, false]);
+    }
+
+    #[test]
+    fn articulation_points_with_used_c() {
+        let n = 7;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let mut used = vec![false; n];
+        used[2] = true;
+        
+        insert_graph(&mut adj, n, 0, 1);
+        insert_graph(&mut adj, n, 0, 2);
+        insert_graph(&mut adj, n, 1, 3);
+        insert_graph(&mut adj, n, 2, 3);
+        insert_graph(&mut adj, n, 2, 4);
+        insert_graph(&mut adj, n, 3, 4);
+        insert_graph(&mut adj, n, 4, 5);
+        insert_graph(&mut adj, n, 4, 6);
+        insert_graph(&mut adj, n, 5, 6);
+
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, true, false, true, true, false, false]);
+    }
+
+    #[test]
+    fn articulation_points_with_used_d() {
+        let n = 7;
+        let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
+        let mut used = vec![false; n];
+        used[2] = true;
+        used[4] = true;
+
+        insert_graph(&mut adj, n, 0, 1);
+        insert_graph(&mut adj, n, 0, 2);
+        insert_graph(&mut adj, n, 1, 3);
+        insert_graph(&mut adj, n, 2, 3);
+        insert_graph(&mut adj, n, 3, 4);
+        insert_graph(&mut adj, n, 3, 5);
+        insert_graph(&mut adj, n, 4, 5);
+        insert_graph(&mut adj, n, 4, 6);
+        insert_graph(&mut adj, n, 5, 6);
+
+        let ap = super::find_articulation_points(&adj, n, &used);
+        assert_eq!(ap, vec![false, true, false, true, false, true, false]);
+    }
 }
