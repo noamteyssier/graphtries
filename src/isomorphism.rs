@@ -1,5 +1,6 @@
 use crate::symmetry::{Condition, Conditions};
 use fixedbitset::FixedBitSet;
+use graph_canon::autom::AutoGroups;
 use itertools::Itertools;
 
 /// A struct that holds the adjacency matrix and orbits of a graph
@@ -86,10 +87,10 @@ impl CanonicalBasedNauty {
 pub fn canonical_based_nauty(
     adj: &FixedBitSet,
     size: usize,
-    orbits: &[i32],
+    aut: &AutoGroups,
 ) -> CanonicalBasedNauty {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
-    let mut new_orbits = Vec::with_capacity(orbits.len());
+    let mut new_orbits = Vec::with_capacity(aut.n_nodes());
 
     let mut degree = vec![0; size];
     let mut global_degree = vec![0; size];
@@ -115,10 +116,11 @@ pub fn canonical_based_nauty(
     relabel_adj(adj, &mut new_adj, size, &labels);
 
     // write the new orbits
-    relabel_orbits(orbits, &mut new_orbits, &labels);
+    relabel_orbits(aut.orbits(), &mut new_orbits, &labels);
 
     // identify symmetry breaking conditions
-    let conditions = symmetry_breaking_conditions(&new_orbits);
+    // let conditions = symmetry_breaking_conditions(&new_orbits);
+    let conditions = symmetry_breaking_conditions(aut, &new_orbits);
 
     // return the new adjacency matrix and orbits
     CanonicalBasedNauty::new(new_adj, new_orbits, conditions)
@@ -173,7 +175,9 @@ fn select_minimum_vertex(
 
         // In the case of ties
         } else if degree[u] == degree[min_u as usize] {
-            if smaller_last_degree(last_degree, u, min_u as usize) || smaller_global_degree(global_degree, last_degree, u, min_u as usize) {
+            if smaller_last_degree(last_degree, u, min_u as usize)
+                || smaller_global_degree(global_degree, last_degree, u, min_u as usize)
+            {
                 min_u = u as i32;
             }
         }
@@ -189,7 +193,12 @@ fn smaller_last_degree(last_degree: &[usize], u: usize, min_u: usize) -> bool {
 }
 
 /// Second tie breaker; smaller global degree
-fn smaller_global_degree(last_degree: &[usize], global_degree: &[usize], u: usize, min_u: usize) -> bool {
+fn smaller_global_degree(
+    last_degree: &[usize],
+    global_degree: &[usize],
+    u: usize,
+    min_u: usize,
+) -> bool {
     last_degree[u] == last_degree[min_u] && global_degree[u] < global_degree[min_u]
 }
 
@@ -251,25 +260,34 @@ fn relabel_orbits(orbits: &[i32], new_orbits: &mut Vec<usize>, labels: &[usize])
     });
 }
 
-fn symmetry_breaking_conditions(orbits: &[usize]) -> Option<Conditions> {
-    let unique_orbits = orbits.iter().unique().collect::<Vec<_>>();
-    if unique_orbits.is_empty() {
+fn symmetry_breaking_conditions(aut: &AutoGroups, orbits: &[usize]) -> Option<Conditions> {
+    if aut.size() == 0 {
         None
     } else {
         let mut conditions = Vec::new();
+        let unique_orbits = orbits.iter().unique().collect::<Vec<_>>();
+        let mut group = aut.automorphisms().clone();
+
         for o in unique_orbits {
-            let mut last = None;
-            orbits
-                .iter()
-                .enumerate()
-                .filter(|(_, v)| *v == o)
-                .for_each(|(i, _)| {
-                    if let Some(last) = last {
-                        conditions.push(Condition::new(last, i));
+            if group.len() == 1 {
+                break;
+            }
+            for (idx, _u) in orbits.iter().enumerate().filter(|(_, v)| *v == o) {
+                if group.len() == 1 {
+                    break;
+                }
+                for (jdx, _v) in orbits.iter().enumerate().filter(|(_, v)| *v == o) {
+                    if group.len() == 1 {
+                        break;
                     }
-                    last = Some(i);
-                });
+                    if idx < jdx {
+                        conditions.push(Condition::new(idx, jdx));
+                        group.retain(|g| g[idx] < g[jdx]);
+                    }
+                }
+            }
         }
+
         Some(Conditions::from_vec(conditions))
     }
 }
@@ -378,36 +396,6 @@ mod testing {
 
         let ap = super::find_articulation_points(&adj, n, &used);
         assert_eq!(ap, vec![0, 1, 1, 0]);
-    }
-
-    #[test]
-    fn symmetry_breaking_conditions_a() {
-        let orbits = vec![0, 0, 1, 1, 2, 2, 3, 3];
-        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
-        assert_eq!(conditions.len(), 4);
-        assert!(conditions.contains(&super::Condition::new(0, 1)));
-        assert!(conditions.contains(&super::Condition::new(2, 3)));
-        assert!(conditions.contains(&super::Condition::new(4, 5)));
-        assert!(conditions.contains(&super::Condition::new(6, 7)));
-    }
-
-    #[test]
-    fn symmetry_breaking_conditions_b() {
-        let orbits = vec![0, 0, 0];
-        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
-        assert_eq!(conditions.len(), 2);
-        assert!(conditions.contains(&super::Condition::new(0, 1)));
-        assert!(conditions.contains(&super::Condition::new(1, 2)));
-    }
-
-    #[test]
-    fn symmetry_breaking_conditions_c() {
-        let orbits = vec![0, 0, 0, 0];
-        let conditions = super::symmetry_breaking_conditions(&orbits).unwrap();
-        assert_eq!(conditions.len(), 3);
-        assert!(conditions.contains(&super::Condition::new(0, 1)));
-        assert!(conditions.contains(&super::Condition::new(1, 2)));
-        assert!(conditions.contains(&super::Condition::new(2, 3)));
     }
 
     // #[test]

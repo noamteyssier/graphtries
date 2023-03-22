@@ -32,7 +32,12 @@ impl Gtrie {
         Ok(gtrie)
     }
 
-    pub fn insert(&mut self, graph: &Bitgraph, conditions: Option<&Conditions>, repr: Option<String>) {
+    pub fn insert(
+        &mut self,
+        graph: &Bitgraph,
+        conditions: Option<&Conditions>,
+        repr: Option<String>,
+    ) {
         assert!(graph.n_nodes() <= self.max_depth);
         if let Some(conditions) = conditions {
             Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions, repr);
