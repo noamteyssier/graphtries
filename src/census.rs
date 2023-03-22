@@ -146,7 +146,7 @@ fn used_respects_conditions(used: &[usize], conditions: Option<&Conditions>) -> 
     if let Some(conditions) = conditions {
         for i in 0..used.len() {
             for j in i + 1..used.len() {
-                if !conditions.respects_any(i, j, used[i], used[j]) {
+                if !conditions.respects_all(i, j, used[i], used[j]) {
                     return false;
                 }
             }
