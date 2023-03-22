@@ -66,11 +66,11 @@ fn main() -> Result<()> {
             size,
         } => {
             build_gtrie(input, output, size)?;
-        },
+        }
 
         Mode::Visualize { input } => {
             visualize_gtrie(input)?;
-        },
+        }
     }
 
     Ok(())

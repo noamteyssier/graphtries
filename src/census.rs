@@ -96,7 +96,7 @@ pub fn matching_vertices_conditionally(
     blacklist: &mut FixedBitSet,
 ) -> Vec<usize> {
     build_candidates_conditionally(node, graph, used, candidates, blacklist);
-    
+
     build_vertices(node, used, graph, candidates)
 }
 
