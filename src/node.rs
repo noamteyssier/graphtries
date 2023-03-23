@@ -216,14 +216,27 @@ impl GtrieNode {
         self.frequency += 1;
     }
 
-    pub fn intersect_conditions(&mut self, conditions: &Conditions) {
+    pub fn intersect_conditions(&mut self, conditions: Option<&Conditions>) {
         if self.conditions.is_none() {
             return;
         }
-        self.conditions.iter_mut().for_each(|c| {
-            c.retain(|x| conditions.contains(x));
-        });
-        if self.conditions.as_ref().unwrap().is_empty() {
+
+        // If the incoming node has conditions, we take the intersection of the
+        // current node's conditions and the incoming node's conditions.
+        if let Some(conditions) = conditions {
+            self.conditions.iter_mut().for_each(|c| {
+                c.retain(|x| conditions.contains(x));
+            });
+
+            // if nothing is left after the intsersection, we remove the
+            // conditions.
+            if self.conditions.as_ref().unwrap().is_empty() {
+                self.conditions = None;
+            }
+
+        // If the incoming node has no conditions, we remove the current node's
+        // conditions.
+        } else {
             self.conditions = None;
         }
     }
