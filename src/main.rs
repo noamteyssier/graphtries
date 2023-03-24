@@ -64,13 +64,21 @@ fn visualize_gtrie(gtrie: &str) -> Result<()> {
 }
 
 fn enumerate_subgraphs(gtrie: &str, input: &str) -> Result<Gtrie> {
+    let now = std::time::Instant::now();
     let graph = io::load_numeric_graph(&input, true)?;
+    eprintln!("Loaded graph: {:?}", now.elapsed());
+
+    let now = std::time::Instant::now();
     let query = Bitgraph::from_graph(&graph);
+    eprintln!("Converted to bitgraph: {:?}", now.elapsed());
+
+    let now = std::time::Instant::now();
     let mut gtrie = Gtrie::read_from_file(&gtrie)?;
+    eprintln!("Loaded gtrie: {:?}", now.elapsed());
 
     let now = std::time::Instant::now();
     gtrie.census(&query);
-    eprintln!("Elapsed: {} ms", now.elapsed().as_millis());
+    eprintln!("Processed graph: {:?}", now.elapsed());
     eprintln!("Total subgraphs: {}", gtrie.total_subgraphs());
 
     gtrie.pprint_results();
