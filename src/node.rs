@@ -3,6 +3,7 @@ use crate::{
     symmetry::{Condition, Conditions},
 };
 use fixedbitset::FixedBitSet;
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
@@ -248,6 +249,18 @@ impl GtrieNode {
     pub fn active_nodes(&self) -> impl Iterator<Item = &usize> {
         self.connections.iter()
     }
+
+    pub fn get_nonzero(&self, map: &mut HashMap<String, usize>) {
+        if let Some(repr) = &self.repr {
+            if self.frequency > 0 {
+                map.insert(repr.clone(), self.frequency);
+            }
+        }
+        for child in self.iter_children() {
+            child.get_nonzero(map);
+        }
+    }
+
 
     pub fn pprint_results(&self) {
         if let Some(repr) = &self.repr {

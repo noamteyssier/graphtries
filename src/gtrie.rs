@@ -1,8 +1,8 @@
-use std::io::Write;
-
 use anyhow::Result;
 use fixedbitset::FixedBitSet;
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 use crate::{
     bitgraph::Bitgraph,
@@ -122,5 +122,12 @@ impl Gtrie {
 
     pub fn total_subgraphs(&self) -> usize {
         self.total_subgraphs
+    }
+
+    #[allow(dead_code)]
+    pub fn get_nonzero(&self) -> HashMap<String, usize> {
+        let mut map = HashMap::new();
+        self.root.get_nonzero(&mut map);
+        map
     }
 }

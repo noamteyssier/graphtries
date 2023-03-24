@@ -16,9 +16,9 @@ use gtrie::Gtrie;
 use isomorphism::canonical_based_nauty;
 use petgraph::{Directed, Graph};
 
-fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
+fn build_gtrie(input: &str, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
     let mut gtrie = Gtrie::new(size);
-    io::iter_graphs_from_file(&input).for_each(|graph| {
+    io::iter_graphs_from_file(input).for_each(|graph| {
         // Create the canonical label of the graph
         let canon_label = CanonLabeling::new(&graph);
 
@@ -57,13 +57,13 @@ fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bo
     }
 }
 
-fn visualize_gtrie(gtrie: String) -> Result<()> {
+fn visualize_gtrie(gtrie: &str) -> Result<()> {
     let gtrie = Gtrie::read_from_file(&gtrie)?;
     gtrie.pprint(false);
     Ok(())
 }
 
-fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
+fn enumerate_subgraphs(gtrie: &str, input: &str) -> Result<Gtrie> {
     let graph = io::load_numeric_graph(&input, true)?;
     let query = Bitgraph::from_graph(&graph);
     let mut gtrie = Gtrie::read_from_file(&gtrie)?;
@@ -75,14 +75,14 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
 
     gtrie.pprint_results();
 
-    Ok(())
+    Ok(gtrie)
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.mode {
         Mode::Enumerate { gtrie, input } => {
-            enumerate_subgraphs(gtrie, input)?;
+            enumerate_subgraphs(&gtrie, &input)?;
         }
 
         Mode::Build {
@@ -91,13 +91,105 @@ fn main() -> Result<()> {
             size,
             visualize,
         } => {
-            build_gtrie(input, output, size, visualize)?;
+            build_gtrie(&input, output, size, visualize)?;
         }
 
         Mode::Visualize { input } => {
-            visualize_gtrie(input)?;
+            visualize_gtrie(&input)?;
         }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod testing {
+    use crate::enumerate_subgraphs;
+
+
+    #[test]
+    fn test_example_dir3() {
+        let graph_path = "example/graphs/example.txt";
+        let gtrie_path = "example/gtries/dir3.gt";
+        let gtrie = enumerate_subgraphs(gtrie_path, graph_path).unwrap();
+        let nonzero = gtrie.get_nonzero();
+        assert_eq!(gtrie.total_subgraphs(), 16);
+        assert_eq!(nonzero.len(), 4);
+        nonzero.values().for_each(|&v| {
+            let cond = v == 1 || v == 3 || v == 9;
+            assert!(cond);
+        });
+    }
+
+    #[test]
+    fn test_example_dir4() {
+        let graph_path = "example/graphs/example.txt";
+        let gtrie_path = "example/gtries/dir4.gt";
+        let gtrie = enumerate_subgraphs(gtrie_path, graph_path).unwrap();
+        let nonzero = gtrie.get_nonzero();
+        assert_eq!(gtrie.total_subgraphs(), 24);
+        assert_eq!(nonzero.len(), 8);
+        nonzero.values().for_each(|&v| {
+            let cond = v == 3;
+            assert!(cond);
+        });
+    }
+
+    #[test]
+    fn test_yeast_dir3() {
+        let graph_path = "example/graphs/yeast.txt";
+        let gtrie_path = "example/gtries/dir3.gt";
+        let gtrie = enumerate_subgraphs(gtrie_path, graph_path).unwrap();
+        let nonzero = gtrie.get_nonzero();
+        assert_eq!(gtrie.total_subgraphs(), 13150);
+        assert_eq!(nonzero.len(), 7);
+        nonzero.values().for_each(|&v| {
+            let cond = v == 1
+                || v == 18
+                || v == 70
+                || v == 293
+                || v == 889
+                || v == 11878;
+            assert!(cond);
+        });
+    }
+
+    #[test]
+    fn test_yeast_dir4() {
+        let graph_path = "example/graphs/yeast.txt";
+        let gtrie_path = "example/gtries/dir4.gt";
+        let gtrie = enumerate_subgraphs(gtrie_path, graph_path).unwrap();
+        let nonzero = gtrie.get_nonzero();
+        assert_eq!(gtrie.total_subgraphs(), 183174);
+        assert_eq!(nonzero.len(), 34);
+        nonzero.values().for_each(|&v| {
+            let cond = v == 1
+                || v == 3
+                || v == 4
+                || v == 6
+                || v == 9
+                || v == 10
+                || v == 11
+                || v == 16
+                || v == 17
+                || v == 32
+                || v == 55
+                || v == 92
+                || v == 102
+                || v == 121
+                || v == 125
+                || v == 157
+                || v == 286
+                || v == 400
+                || v == 989
+                || v == 1125
+                || v == 1460
+                || v == 1843
+                || v == 4498
+                || v == 22995
+                || v == 148761;
+            assert!(cond);
+        });
+    }
+
 }
