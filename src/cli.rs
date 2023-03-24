@@ -21,7 +21,6 @@ pub enum Mode {
 
     /// Build a gtrie from a list of graphs.
     Build {
-
         /// Path to the input file containing the graph6 formatted graphs
         #[arg(short, long)]
         input: String,

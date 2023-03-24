@@ -2,7 +2,7 @@ use crate::symmetry::{Condition, Conditions};
 use fixedbitset::FixedBitSet;
 use graph_canon::autom::AutoGroups;
 use itertools::Itertools;
-use petgraph::{Graph, Directed};
+use petgraph::{Directed, Graph};
 
 /// A struct that holds the adjacency matrix and orbits of a graph
 pub struct CanonicalBasedNauty {
@@ -85,10 +85,7 @@ impl CanonicalBasedNauty {
 /// 14.       last_degree[] := current_degree[]
 /// 15.       update current_degree[] removing u_min connections
 /// 16.   return label_canon
-pub fn canonical_based_nauty(
-    adj: &FixedBitSet,
-    size: usize,
-) -> CanonicalBasedNauty {
+pub fn canonical_based_nauty(adj: &FixedBitSet, size: usize) -> CanonicalBasedNauty {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
 
     let mut degree = vec![0; size];
@@ -292,11 +289,7 @@ fn symmetry_breaking_conditions(aut: &AutoGroups, orbits: &[usize]) -> Option<Co
 }
 
 /// Algorithm: Finding articulation points
-fn find_articulation_points(
-    adj_matrix: &FixedBitSet, 
-    n: usize, 
-    blacklist: &[bool]
-) -> Vec<bool> {
+fn find_articulation_points(adj_matrix: &FixedBitSet, n: usize, blacklist: &[bool]) -> Vec<bool> {
     let mut timer = 0;
     let mut visited = vec![false; n];
     let mut timing = vec![-1; n];
@@ -319,7 +312,7 @@ fn find_articulation_points(
 
 /// Algorithm: Finding articulation points
 ///
-/// Adapted from C++ implementation here: 
+/// Adapted from C++ implementation here:
 /// https://cp-algorithms.com/graph/cutpoints.html#algorithm
 fn dfs_articulation(
     adj: &FixedBitSet,
@@ -342,15 +335,14 @@ fn dfs_articulation(
 
     // iterate over all nodes
     for v in 0..n {
-
         // skip if not a neighbor of the current head
-        if !adj.contains(u*n+v) && !adj.contains(v*n+u) {
-            continue
+        if !adj.contains(u * n + v) && !adj.contains(v * n + u) {
+            continue;
         }
 
         // skip if blacklisted
         if blacklist[v] {
-            continue
+            continue;
         }
 
         // skip if the parent of the current head
@@ -493,7 +485,7 @@ mod testing {
         let mut adj = fixedbitset::FixedBitSet::with_capacity(n * n);
         let mut used = vec![false; n];
         used[2] = true;
-        
+
         insert_graph(&mut adj, n, 0, 1);
         insert_graph(&mut adj, n, 0, 2);
         insert_graph(&mut adj, n, 1, 3);

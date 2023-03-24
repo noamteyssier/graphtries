@@ -19,7 +19,6 @@ use petgraph::{Directed, Graph};
 fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
     let mut gtrie = Gtrie::new(size);
     io::iter_graphs_from_file(&input).for_each(|graph| {
-
         // Create the canonical label of the graph
         let canon_label = CanonLabeling::new(&graph);
 
@@ -48,13 +47,13 @@ fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bo
 
     match output {
         Some(path) => gtrie.write_to_file(&path),
-        None => { 
-            if visualize { 
+        None => {
+            if visualize {
                 Ok(())
             } else {
                 gtrie.write_to_stdout()
             }
-        },
+        }
     }
 }
 
