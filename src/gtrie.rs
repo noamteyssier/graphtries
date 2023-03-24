@@ -16,12 +16,14 @@ use crate::{
 pub struct Gtrie {
     root: GtrieNode,
     max_depth: usize,
+    total_subgraphs: usize,
 }
 impl Gtrie {
     pub fn new(max_depth: usize) -> Self {
         Gtrie {
             root: GtrieNode::new(0),
             max_depth,
+            total_subgraphs: 0,
         }
     }
 
@@ -114,7 +116,11 @@ impl Gtrie {
         let mut blacklist = FixedBitSet::with_capacity(graph.n_nodes());
 
         for c in self.root.iter_children_mut() {
-            match_child_conditionally(c, &mut used, &mut candidates, &mut blacklist, graph)
+            match_child_conditionally(c, &mut used, &mut candidates, &mut blacklist, graph, &mut self.total_subgraphs)
         }
+    }
+
+    pub fn total_subgraphs(&self) -> usize {
+        self.total_subgraphs
     }
 }

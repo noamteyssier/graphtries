@@ -67,6 +67,7 @@ pub fn match_child_conditionally(
     candidates: &mut Candidates,
     blacklist: &mut FixedBitSet,
     graph: &Bitgraph,
+    total_subgraphs: &mut usize,
 ) {
     if !used_respects_conditions(used, node.conditions()) {
         return;
@@ -78,9 +79,10 @@ pub fn match_child_conditionally(
         blacklist.insert(v);
         if node.is_graph() {
             node.increment_frequency();
+            *total_subgraphs += 1;
         } else {
             for c in node.iter_children_mut() {
-                match_child_conditionally(c, used, candidates, blacklist, graph);
+                match_child_conditionally(c, used, candidates, blacklist, graph, total_subgraphs);
             }
         }
         used.pop();

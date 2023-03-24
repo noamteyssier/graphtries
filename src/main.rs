@@ -71,6 +71,7 @@ fn enumerate_subgraphs(gtrie: String, input: String) -> Result<()> {
     let now = std::time::Instant::now();
     gtrie.census(&query);
     eprintln!("Elapsed: {} ms", now.elapsed().as_millis());
+    eprintln!("Total subgraphs: {}", gtrie.total_subgraphs());
 
     gtrie.pprint_results();
 
