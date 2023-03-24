@@ -106,7 +106,6 @@ fn main() -> Result<()> {
 mod testing {
     use crate::enumerate_subgraphs;
 
-
     #[test]
     fn test_example_dir3() {
         let graph_path = "example/graphs/example.txt";
@@ -144,12 +143,7 @@ mod testing {
         assert_eq!(gtrie.total_subgraphs(), 13150);
         assert_eq!(nonzero.len(), 7);
         nonzero.values().for_each(|&v| {
-            let cond = v == 1
-                || v == 18
-                || v == 70
-                || v == 293
-                || v == 889
-                || v == 11878;
+            let cond = v == 1 || v == 18 || v == 70 || v == 293 || v == 889 || v == 11878;
             assert!(cond);
         });
     }
@@ -191,5 +185,4 @@ mod testing {
             assert!(cond);
         });
     }
-
 }

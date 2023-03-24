@@ -116,7 +116,14 @@ impl Gtrie {
         let mut blacklist = FixedBitSet::with_capacity(graph.n_nodes());
 
         for c in self.root.iter_children_mut() {
-            match_child_conditionally(c, &mut used, &mut candidates, &mut blacklist, graph, &mut self.total_subgraphs)
+            match_child_conditionally(
+                c,
+                &mut used,
+                &mut candidates,
+                &mut blacklist,
+                graph,
+                &mut self.total_subgraphs,
+            )
         }
     }
 

@@ -261,7 +261,6 @@ impl GtrieNode {
         }
     }
 
-
     pub fn pprint_results(&self) {
         if let Some(repr) = &self.repr {
             println!("{}\t{}", repr, self.frequency);
