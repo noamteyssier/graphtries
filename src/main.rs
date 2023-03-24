@@ -13,12 +13,18 @@ use clap::Parser;
 use cli::{Cli, Mode};
 use graph_canon::CanonLabeling;
 use gtrie::Gtrie;
+use indicatif::ProgressBar;
 use isomorphism::canonical_based_nauty;
 use petgraph::{Directed, Graph};
 
-fn build_gtrie(input: &str, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
+fn build_gtrie(input: &str, output: String, size: usize, visualize: bool) -> Result<()> {
     let mut gtrie = Gtrie::new(size);
-    io::iter_graphs_from_file(input).for_each(|graph| {
+
+    let sp = ProgressBar::new_spinner();
+    sp.set_message("Building gtrie...");
+
+    let mut num_graphs = 0;
+    io::iter_graphs_from_file(input).enumerate().for_each(|(idx, graph)| {
         // Create the canonical label of the graph
         let canon_label = CanonLabeling::new(&graph);
 
@@ -39,22 +45,23 @@ fn build_gtrie(input: &str, output: Option<String>, size: usize, visualize: bool
 
         // Insert the graph into the gtrie
         gtrie.insert(&bgraph, canon_based_nauty.conditions(), Some(repr));
+
+        if idx % 1000 == 0 {
+            sp.set_message(format!("Building gtrie... {} graphs", idx));
+        }
+
+        num_graphs += 1;
     });
+
+    sp.finish_with_message(format!("Finished building gtrie. {} graphs found.", num_graphs));
+
+    eprintln!("Writing gtrie to file: {}", output);
+    gtrie.write_to_file(&output)?;
 
     if visualize {
         gtrie.pprint(false);
     }
-
-    match output {
-        Some(path) => gtrie.write_to_file(&path),
-        None => {
-            if visualize {
-                Ok(())
-            } else {
-                gtrie.write_to_stdout()
-            }
-        }
-    }
+    Ok(())
 }
 
 fn visualize_gtrie(gtrie: &str) -> Result<()> {
