@@ -26,9 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
+        run: cargo install cargo-nextest
       - name: Test
         run: cargo nextest run
 
@@ -38,11 +36,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install nextest
-      uses: taiki-e/install-action@nextest
+      run: cargo install cargo-nextest
     - name: Install LLVM-Coverage
-      uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-llvm-cov
+      run: cargo install cargo-llvm-cov
     - name: Measure Coverage
       run: cargo llvm-cov --lcov --output-path coverage.lcov 
     - name: Upload Coverage
