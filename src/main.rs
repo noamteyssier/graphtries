@@ -11,7 +11,7 @@ use anyhow::Result;
 use bitgraph::Bitgraph;
 use clap::Parser;
 use cli::{Cli, Mode};
-use graph_canon::autom::AutoGroups;
+use graph_canon::CanonLabeling;
 use gtrie::Gtrie;
 use isomorphism::canonical_based_nauty;
 use petgraph::{Directed, Graph};
@@ -19,12 +19,26 @@ use petgraph::{Directed, Graph};
 fn build_gtrie(input: String, output: Option<String>, size: usize, visualize: bool) -> Result<()> {
     let mut gtrie = Gtrie::new(size);
     io::iter_graphs_from_file(&input).for_each(|graph| {
-        let aut = AutoGroups::from_petgraph(&graph);
-        let canon_graph: Graph<(), (), Directed> = Graph::from(&aut);
+
+        // Create the canonical label of the graph
+        let canon_label = CanonLabeling::new(&graph);
+
+        // Convert the canonical label to a new graph
+        let canon_graph: Graph<(), (), Directed> = canon_label.into();
+
+        // Convert to a bitgraph
         let mut bgraph = Bitgraph::from_graph(&canon_graph);
-        let canon_based_nauty = canonical_based_nauty(bgraph.adjacency(), size, &aut);
+
+        // Compute the nauty-based canonical labeling
+        let canon_based_nauty = canonical_based_nauty(bgraph.adjacency(), size);
+
+        // Overwrite the adjacency matrix with the new nauty-based one
         bgraph.overwrite_adjacency(canon_based_nauty.adjacency());
+
+        // Generate the nauty-representation of the new graph
         let repr = graph6_rs::write_graph6(bgraph.as_bitvec(), bgraph.n_nodes(), bgraph.is_dir());
+
+        // Insert the graph into the gtrie
         gtrie.insert(&bgraph, canon_based_nauty.conditions(), Some(repr));
     });
 
