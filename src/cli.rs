@@ -25,20 +25,20 @@ pub enum Mode {
         #[arg(short, long)]
         input: String,
 
-        /// Path to the output file where gtrie will be written (default = stdout).
-        #[arg(short, long)]
-        output: Option<String>,
+        /// Path to the output file where gtrie will be written.
+        #[arg(short, long, required_if_eq("visualize", "false"))]
+        output: String,
 
         /// Size of subgraphs in the input file.
         #[arg(short, long)]
         size: usize,
 
-        /// Visualize the gtrie (will not write gtrie if no output is provided).
+        /// Visualize the gtrie.
         #[arg(short, long)]
         visualize: bool,
     },
 
-    /// Visualize a gtrie.
+    /// Visualize a precalculated gtrie.
     Visualize {
         #[arg(short, long)]
         input: String,
