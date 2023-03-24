@@ -25,18 +25,14 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
-      - name: Install nextest
-        run: cargo install cargo-nextest
       - name: Test
-        run: cargo nextest run
+        run: cargo test
 
   coverage:
     name: Coverage
     runs-on: 'ubuntu-latest'
     steps:
     - uses: actions/checkout@v3
-    - name: Install nextest
-      run: cargo install cargo-nextest
     - name: Install LLVM-Coverage
       run: cargo install cargo-llvm-cov
     - name: Measure Coverage
