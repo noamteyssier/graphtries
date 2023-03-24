@@ -2,6 +2,7 @@ use crate::symmetry::{Condition, Conditions};
 use fixedbitset::FixedBitSet;
 use graph_canon::autom::AutoGroups;
 use itertools::Itertools;
+use petgraph::{Graph, Directed};
 
 /// A struct that holds the adjacency matrix and orbits of a graph
 pub struct CanonicalBasedNauty {
@@ -87,10 +88,8 @@ impl CanonicalBasedNauty {
 pub fn canonical_based_nauty(
     adj: &FixedBitSet,
     size: usize,
-    aut: &AutoGroups,
 ) -> CanonicalBasedNauty {
     let mut new_adj = FixedBitSet::with_capacity(size * size);
-    let mut new_orbits = Vec::with_capacity(aut.n_nodes());
 
     let mut degree = vec![0; size];
     let mut global_degree = vec![0; size];
@@ -115,15 +114,24 @@ pub fn canonical_based_nauty(
     // write the new adjacency matrix given the labels
     relabel_adj(adj, &mut new_adj, size, &labels);
 
-    // write the new orbits
-    relabel_orbits(aut.orbits(), &mut new_orbits, &labels);
+    // Create the new graph to calculate the automorphism group
+    let mut edges = Vec::with_capacity(size * size);
+    for u in 0..size {
+        for v in 0..size {
+            if new_adj.contains(u * size + v) {
+                edges.push((u as u32, v as u32));
+            }
+        }
+    }
+    let graph: Graph<(), (), Directed> = Graph::from_edges(&edges);
+    let new_aut = AutoGroups::from_petgraph(&graph);
+    let orbits = new_aut.orbits().iter().map(|x| *x as usize).collect_vec();
 
     // identify symmetry breaking conditions
-    // let conditions = symmetry_breaking_conditions(&new_orbits);
-    let conditions = symmetry_breaking_conditions(aut, &new_orbits);
+    let conditions = symmetry_breaking_conditions(&new_aut, &orbits);
 
     // return the new adjacency matrix and orbits
-    CanonicalBasedNauty::new(new_adj, new_orbits, conditions)
+    CanonicalBasedNauty::new(new_adj, orbits, conditions)
 }
 
 fn calculate_relabels(
@@ -254,12 +262,6 @@ fn relabel_adj(adj: &FixedBitSet, new_adj: &mut FixedBitSet, size: usize, labels
     }
 }
 
-fn relabel_orbits(orbits: &[i32], new_orbits: &mut Vec<usize>, labels: &[usize]) {
-    labels.iter().for_each(|v| {
-        new_orbits.push(orbits[*v] as usize);
-    });
-}
-
 fn symmetry_breaking_conditions(aut: &AutoGroups, orbits: &[usize]) -> Option<Conditions> {
     if aut.size() == 0 {
         None
@@ -277,9 +279,6 @@ fn symmetry_breaking_conditions(aut: &AutoGroups, orbits: &[usize]) -> Option<Co
                     break;
                 }
                 for (jdx, _v) in orbits.iter().enumerate().filter(|(_, v)| *v == o) {
-                    if group.len() == 1 {
-                        break;
-                    }
                     if idx < jdx {
                         conditions.push(Condition::new(idx, jdx));
                         group.retain(|g| g[idx] < g[jdx]);
