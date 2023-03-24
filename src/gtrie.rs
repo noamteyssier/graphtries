@@ -1,8 +1,8 @@
-use std::io::Write;
-
 use anyhow::Result;
 use fixedbitset::FixedBitSet;
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 use crate::{
     bitgraph::Bitgraph,
@@ -16,12 +16,14 @@ use crate::{
 pub struct Gtrie {
     root: GtrieNode,
     max_depth: usize,
+    total_subgraphs: usize,
 }
 impl Gtrie {
     pub fn new(max_depth: usize) -> Self {
         Gtrie {
             root: GtrieNode::new(0),
             max_depth,
+            total_subgraphs: 0,
         }
     }
 
@@ -39,36 +41,14 @@ impl Gtrie {
         repr: Option<String>,
     ) {
         assert!(graph.n_nodes() <= self.max_depth);
-        if let Some(conditions) = conditions {
-            Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions, repr);
-        } else {
-            Self::insert_recursively(graph, &mut self.root, 0, repr);
-        }
-    }
-
-    fn insert_recursively(graph: &Bitgraph, node: &mut GtrieNode, k: usize, repr: Option<String>) {
-        if k == graph.n_nodes() {
-            node.set_graph(true);
-            node.set_repr(repr);
-        } else {
-            for c in node.iter_children_mut() {
-                if Self::depth_eq(c, graph, k) {
-                    Self::insert_recursively(graph, c, k + 1, repr);
-                    return;
-                }
-            }
-            let mut child = GtrieNode::new(k + 1);
-            child.update_adjacency(graph, k + 1);
-            Self::insert_recursively(graph, &mut child, k + 1, repr);
-            node.insert_child(child);
-        }
+        Self::insert_recursively_conditional(graph, &mut self.root, 0, conditions, repr);
     }
 
     fn insert_recursively_conditional(
         graph: &Bitgraph,
         node: &mut GtrieNode,
         k: usize,
-        conditions: &Conditions,
+        conditions: Option<&Conditions>,
         repr: Option<String>,
     ) {
         if k == graph.n_nodes() {
@@ -81,11 +61,11 @@ impl Gtrie {
                     return;
                 }
             }
-            let mut child = if conditions.is_empty() {
-                GtrieNode::new(k + 1)
-            } else {
-                node.intersect_conditions(conditions);
+            node.intersect_conditions(conditions);
+            let mut child = if let Some(conditions) = conditions {
                 GtrieNode::new_conditional(k + 1, conditions)
+            } else {
+                GtrieNode::new(k + 1)
             };
             child.update_adjacency(graph, k + 1);
             Self::insert_recursively_conditional(graph, &mut child, k + 1, conditions, repr);
@@ -136,7 +116,25 @@ impl Gtrie {
         let mut blacklist = FixedBitSet::with_capacity(graph.n_nodes());
 
         for c in self.root.iter_children_mut() {
-            match_child_conditionally(c, &mut used, &mut candidates, &mut blacklist, graph)
+            match_child_conditionally(
+                c,
+                &mut used,
+                &mut candidates,
+                &mut blacklist,
+                graph,
+                &mut self.total_subgraphs,
+            )
         }
+    }
+
+    pub fn total_subgraphs(&self) -> usize {
+        self.total_subgraphs
+    }
+
+    #[allow(dead_code)]
+    pub fn get_nonzero(&self) -> HashMap<String, usize> {
+        let mut map = HashMap::new();
+        self.root.get_nonzero(&mut map);
+        map
     }
 }

@@ -3,6 +3,7 @@ use crate::{
     symmetry::{Condition, Conditions},
 };
 use fixedbitset::FixedBitSet;
+use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
@@ -216,14 +217,27 @@ impl GtrieNode {
         self.frequency += 1;
     }
 
-    pub fn intersect_conditions(&mut self, conditions: &Conditions) {
+    pub fn intersect_conditions(&mut self, conditions: Option<&Conditions>) {
         if self.conditions.is_none() {
             return;
         }
-        self.conditions.iter_mut().for_each(|c| {
-            c.retain(|x| conditions.contains(x));
-        });
-        if self.conditions.as_ref().unwrap().is_empty() {
+
+        // If the incoming node has conditions, we take the intersection of the
+        // current node's conditions and the incoming node's conditions.
+        if let Some(conditions) = conditions {
+            self.conditions.iter_mut().for_each(|c| {
+                c.retain(|x| conditions.contains(x));
+            });
+
+            // if nothing is left after the intsersection, we remove the
+            // conditions.
+            if self.conditions.as_ref().unwrap().is_empty() {
+                self.conditions = None;
+            }
+
+        // If the incoming node has no conditions, we remove the current node's
+        // conditions.
+        } else {
             self.conditions = None;
         }
     }
@@ -234,6 +248,17 @@ impl GtrieNode {
 
     pub fn active_nodes(&self) -> impl Iterator<Item = &usize> {
         self.connections.iter()
+    }
+
+    pub fn get_nonzero(&self, map: &mut HashMap<String, usize>) {
+        if let Some(repr) = &self.repr {
+            if self.frequency > 0 {
+                map.insert(repr.clone(), self.frequency);
+            }
+        }
+        for child in self.iter_children() {
+            child.get_nonzero(map);
+        }
     }
 
     pub fn pprint_results(&self) {
