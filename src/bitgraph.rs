@@ -35,6 +35,7 @@ impl Bitgraph {
         }
     }
 
+    #[inline]
     pub fn is_connected(&self, u: usize, v: usize) -> bool {
         self.adj.contains(u * self.n + v)
     }
